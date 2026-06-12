@@ -1,3 +1,21 @@
-export default function Home() {
-  return <h1>GELAKRAFT FUNCIONA</h1>
+import Hero from '@/components/Hero'
+import ToolsSection from '@/components/ToolsSection'
+import MythologySection from '@/components/MythologySection'
+import AudienceSection from '@/components/AudienceSection'
+import PrivacySection from '@/components/PrivacySection'
+import CTASection from '@/components/CTASection'
+import Footer from '@/components/Footer'
+
+export default function HomePage() {
+  return (
+    <>
+      <Hero />
+      <ToolsSection />
+      <MythologySection />
+      <AudienceSection />
+      <PrivacySection />
+      <CTASection />
+      <Footer />
+    </>
+  )
 }
