@@ -17,3 +17,8 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
+
+// 🔧 Forzar Node.js runtime (no Edge), porque @supabase/ssr arrastra
+// @supabase/supabase-js que usa APIs de Node como `process.version`,
+// las cuales no están disponibles en el Edge Runtime.
+export const runtime = 'nodejs'
