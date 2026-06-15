@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { MoonHaloIcon, ArrowRightIcon } from './icons'
 
 /**
@@ -26,10 +27,10 @@ export default function CTASection() {
         </p>
 
         <div className="cta-buttons">
-          <a href="#" className="btn-primary">
+          <Link href="/izen-ematea" className="btn-primary">
             Izen-ematea
             <ArrowRightIcon />
-          </a>
+          </Link>
           <a href="#tresnak" className="btn-secondary">
             Tresnak probatu →
           </a>

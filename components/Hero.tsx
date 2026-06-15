@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import TopBar from './TopBar'
 import { ArrowRightIcon } from './icons'
 
@@ -40,10 +41,10 @@ export default function Hero() {
             Sugaar zure erronka.
           </p>
           <div className="hero-ctas">
-            <a href="#" className="btn-primary">
+            <Link href="/izen-ematea" className="btn-primary">
               Izen-ematea
               <ArrowRightIcon />
-            </a>
+            </Link>
             <a href="#tresnak" className="btn-secondary">
               Nola dabilen ikusi →
             </a>

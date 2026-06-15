@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import Logo from './Logo'
 
 /**
@@ -7,9 +8,9 @@ import Logo from './Logo'
 export default function TopBar() {
   return (
     <nav className="top-bar">
-      <a href="/" className="top-bar-logo" aria-label="GELAKRAFT hasiera-orria">
+      <Link href="/" className="top-bar-logo" aria-label="GELAKRAFT hasiera-orria">
         <Logo size={32} textSize={22} />
-      </a>
+      </Link>
       <div className="top-bar-actions">
         <a href="#tresnak" className="top-bar-link hide-mobile">
           Tresnak
@@ -17,9 +18,9 @@ export default function TopBar() {
         <a href="#nor-gara" className="top-bar-link hide-mobile">
           Nor gara?
         </a>
-        <a href="#" className="top-bar-link">
+        <Link href="/saioa-hasi" className="top-bar-link">
           Saioa hasi
-        </a>
+        </Link>
       </div>
     </nav>
   )
