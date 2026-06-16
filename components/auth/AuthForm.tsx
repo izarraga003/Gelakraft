@@ -131,8 +131,11 @@ export default function AuthForm({
     setErrorMsg('')
 
     const supabase = createClient()
+    // El redirect pasa por /auth/callback (URL autorizada en Supabase) y desde
+    // allí el callback redirige a /auth/pasahitza-aldatu. Esto evita tener que
+    // añadir /auth/pasahitza-aldatu a la whitelist de Supabase.
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/auth/pasahitza-aldatu`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/pasahitza-aldatu`,
     })
 
     if (error) {
