@@ -1,8 +1,9 @@
+import Link from 'next/link'
 import { MoonIcon } from './icons'
 
 /**
  * Footer del sitio.
- * 3 columnas en desktop, 1 columna en mobile.
+ * 4 columnas en desktop, 1 columna en mobile.
  */
 export default function Footer() {
   return (
@@ -22,22 +23,37 @@ export default function Footer() {
           <h4 className="footer-col-title">Tresnak</h4>
           <ul>
             <li>
-              <a href="#">Sugaarren aurkako borroka</a>
+              <a href="#tresnak">Sugaarren aurkako borroka</a>
             </li>
             <li>
-              <a href="#">Mariren isiltasun-erronka</a>
+              <a href="#tresnak">Mariren isiltasun-erronka</a>
             </li>
             <li>
-              <a href="#">Ustekabeko gertaera</a>
+              <a href="#tresnak">Ustekabeko gertaera</a>
             </li>
             <li>
-              <a href="#">Atzerako kontaketa</a>
+              <a href="#tresnak">Atzerako kontaketa</a>
             </li>
             <li>
-              <a href="#">Kronometroa</a>
+              <a href="#tresnak">Kronometroa</a>
             </li>
             <li>
-              <a href="#">Ausazko hautatzailea</a>
+              <a href="#tresnak">Ausazko hautatzailea</a>
+            </li>
+          </ul>
+        </div>
+
+        <div className="footer-col">
+          <h4 className="footer-col-title">Sartu</h4>
+          <ul>
+            <li>
+              <Link href="/saioa-hasi">Irakaslea zara?</Link>
+            </li>
+            <li>
+              <Link href="/ikasle/sartu">Ikaslea zara?</Link>
+            </li>
+            <li>
+              <Link href="/izen-ematea">Izen-ematea</Link>
             </li>
           </ul>
         </div>
@@ -49,7 +65,7 @@ export default function Footer() {
               <a href="#">Nor gara?</a>
             </li>
             <li>
-              <a href="#">Kontaktua</a>
+              <a href="mailto:info@gelakraft.eus">Kontaktua</a>
             </li>
             <li>
               <a href="#">Pribatutasun politika</a>

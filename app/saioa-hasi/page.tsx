@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import AuthForm, { AuthHeader } from '@/components/auth/AuthForm'
 
 export const metadata: Metadata = {
@@ -19,6 +20,12 @@ export default function LoginPage() {
         alternativeLabel="Eman izena"
         alternativeHref="/izen-ematea"
       />
+      <p className="auth-secondary-link">
+        Ikaslea zara?{' '}
+        <Link href="/ikasle/sartu" className="auth-link">
+          Sartu hemen
+        </Link>
+      </p>
     </main>
   )
 }

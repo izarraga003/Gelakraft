@@ -131,11 +131,12 @@ export default function AuthForm({
     setErrorMsg('')
 
     const supabase = createClient()
-    // El redirect pasa por /auth/callback (URL autorizada en Supabase) y desde
-    // allí el callback redirige a /auth/pasahitza-aldatu. Esto evita tener que
-    // añadir /auth/pasahitza-aldatu a la whitelist de Supabase.
+    // Endpoint dedicado: evita la ambigüedad de query params en redirectTo.
+    // Supabase no siempre preserva ?next= al hacer el redirect final desde su
+    // servidor, pero la ruta base sí. Por eso usamos un endpoint propio
+    // (/auth/recovery) que ya sabe a dónde llevar al usuario.
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/pasahitza-aldatu`,
+      redirectTo: `${window.location.origin}/auth/recovery`,
     })
 
     if (error) {
