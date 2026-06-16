@@ -40,6 +40,9 @@ npm install
 2. **New query**.
 3. Copiar y pegar todo el contenido de `supabase/schema.sql` del proyecto.
 4. **Run**. Crea las tablas `profiles` y `classrooms` con RLS activado.
+5. **New query** otra vez.
+6. Copiar y pegar `supabase/students.sql`.
+7. **Run**. Crea la tabla `students` y la función RPC para login de alumno.
 
 ### 4. Configurar Authentication en Supabase
 
@@ -115,12 +118,25 @@ GELAKRAFT taldea — Anbotoko kobazulotik
 cp .env.example .env.local
 ```
 
-Editar `.env.local` y pegar los valores que has copiado:
+Editar `.env.local` y rellenar:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+STUDENT_SESSION_SECRET=...
 ```
+
+Para generar el `STUDENT_SESSION_SECRET` (32+ caracteres aleatorios):
+
+```bash
+# En Linux/macOS:
+openssl rand -base64 32
+
+# En Windows PowerShell:
+[Convert]::ToBase64String((1..32 | ForEach-Object {Get-Random -Maximum 256}))
+```
+
+Cualquier cadena aleatoria de 32+ caracteres vale. Si la cambias en el futuro, todos los alumnos quedarán deslogueados (las cookies antiguas dejarán de validarse).
 
 ### 7. Arrancar el servidor de desarrollo
 
@@ -227,6 +243,35 @@ gelakraft/
 - Pasahitza: mínimo **8 caracteres**.
 - Sin confirmar email: no se puede hacer login (se muestra un mensaje claro).
 - Sesiones gestionadas por Supabase con cookies firmadas (Server-Side).
+
+---
+
+## Sistema de alumnos (ikasleak)
+
+Los alumnos **NO usan Supabase Auth ni emails**. El profesor los crea desde el panel y reciben credenciales (usuario + contraseña) que ven directamente en su tabla de ikasgela.
+
+### Cómo funciona
+
+1. **El profesor crea una ikasgela** (`/panela/ikasgela-berria`).
+2. **El profesor añade alumnos** pegando una lista de nombres en un textarea (uno por línea).
+3. **El sistema genera automáticamente**:
+   - **Username**: `nombre.apellido` (sin tildes, en minúsculas, único dentro de la ikasgela). Si hay duplicados, añade un número: `ane.etxebarria2`.
+   - **Contraseña**: una palabra mitológica vasca + número (`Mari-247`, `Sugaar-83`, `Lamia-156`).
+4. **El profesor ve la tabla con todos los alumnos**: nombre, usuario, contraseña en texto plano, botones para copiar y regenerar.
+5. **Los alumnos hacen login** en `gelakraft.eus/ikasle/sartu` con su username y password.
+
+### Decisiones de seguridad
+
+- La contraseña se guarda **dos veces**: un hash bcrypt para verificación rápida en login, y el texto plano para que el profesor la vea siempre.
+- **RLS estricto**: cada profesor solo puede ver/modificar los alumnos de sus propias ikasgelas (verificado a nivel de BD).
+- **Función RPC `find_student_for_login`** con `SECURITY DEFINER`: permite buscar un alumno por username durante el login sin estar autenticado, pero solo devuelve los campos necesarios.
+- **Sesiones de alumno** gestionadas con `iron-session` (cookies cifradas con secreto del servidor, 30 días de duración).
+
+### Generador de contraseñas
+
+Vocabulario actual (`lib/students/generate-password.ts`): Mari, Sugaar, Lamia, Sorgina, Jentila, Basajaun, Tartalo, Mendi, Aizkorri, Gorbea, Akelarre, Erreka, Haritz, Otso, Hartz, Eguzki, Ilargi, Izar, Gaztelu, Errota… (45 palabras).
+
+Formato: `<Palabra>-<NN>` donde NN es número entre 10 y 999.
 
 ---
 

@@ -1459,25 +1459,6 @@ a {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
 }
-.panel-classroom-card {
-  background: var(--argi-warm);
-  border: 1px solid rgba(184, 138, 60, 0.22);
-  border-radius: 6px;
-  padding: 24px;
-}
-.panel-classroom-card h3 {
-  font-family: var(--font-fraunces-stack);
-  font-size: 19px;
-  font-weight: 600;
-  color: var(--ilun);
-  margin-bottom: 6px;
-}
-.panel-classroom-card p {
-  font-size: 13px;
-  color: var(--iluntze);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
 
 .panel-tools-grid {
   display: grid;
@@ -1551,4 +1532,452 @@ a {
   .panel-tools-grid { grid-template-columns: 1fr; }
   .panel-section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
   .panel-logo-suffix { display: none; }
+}
+
+/* ============================================
+   PANEL DEL PROFESOR — FORMULARIOS Y TABLAS
+   ============================================ */
+
+.panel-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  color: var(--iluntze);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+  opacity: 0.75;
+  transition: opacity 0.15s, color 0.15s;
+}
+.panel-breadcrumb:hover {
+  opacity: 1;
+  color: var(--sugaar);
+}
+
+.panel-form-section {
+  max-width: 640px;
+}
+
+.panel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.panel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--iluntze);
+  font-weight: 600;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-field-counter {
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  color: var(--sugaar);
+  font-style: italic;
+}
+
+.panel-input,
+.panel-textarea {
+  background: white;
+  border: 1px solid rgba(184, 138, 60, 0.35);
+  border-radius: 4px;
+  padding: 12px 14px;
+  color: var(--ilun);
+  font-family: var(--font-inter-stack);
+  font-size: 15px;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.panel-input:focus,
+.panel-textarea:focus {
+  outline: none;
+  border-color: var(--urrea);
+  box-shadow: 0 0 0 3px rgba(184, 138, 60, 0.15);
+}
+
+.panel-textarea {
+  font-family: var(--font-inter-stack);
+  resize: vertical;
+  min-height: 200px;
+  line-height: 1.55;
+}
+
+.panel-field-hint {
+  font-size: 12.5px;
+  color: var(--iluntze);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.panel-form-error {
+  background: rgba(194, 70, 23, 0.08);
+  border: 1px solid rgba(194, 70, 23, 0.3);
+  border-radius: 4px;
+  padding: 10px 14px;
+  color: var(--sugaar);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.panel-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.panel-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--iluntze);
+  border: 1px solid rgba(44, 71, 89, 0.25);
+  border-radius: 4px;
+  padding: 10px 18px;
+  font-family: var(--font-inter-stack);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+.panel-btn-secondary:hover {
+  border-color: var(--iluntze);
+  color: var(--ilun);
+}
+
+.panel-classroom-card {
+  background: var(--argi-warm);
+  border: 1px solid rgba(184, 138, 60, 0.22);
+  border-radius: 6px;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.panel-classroom-card:hover {
+  border-color: var(--urrea);
+  transform: translateY(-1px);
+}
+.panel-classroom-stage {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--sugaar);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.panel-classroom-card h3 {
+  font-family: var(--font-fraunces-stack);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ilun);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.panel-classroom-meta {
+  font-size: 13px;
+  color: var(--iluntze);
+  opacity: 0.75;
+}
+
+/* TABLA DE ALUMNOS */
+.students-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(184, 138, 60, 0.22);
+  border-radius: 6px;
+  background: var(--argi-warm);
+}
+
+.students-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.students-table thead {
+  background: rgba(184, 138, 60, 0.08);
+  border-bottom: 1px solid rgba(184, 138, 60, 0.22);
+}
+.students-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--iluntze);
+  font-weight: 600;
+}
+.students-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(184, 138, 60, 0.12);
+  vertical-align: middle;
+}
+.students-table tr:last-child td {
+  border-bottom: none;
+}
+.student-name {
+  font-weight: 500;
+  color: var(--ilun);
+}
+.student-code {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  background: white;
+  border: 1px solid rgba(184, 138, 60, 0.22);
+  padding: 4px 10px;
+  border-radius: 3px;
+  color: var(--ilun);
+  letter-spacing: 0.02em;
+  user-select: all;
+}
+.student-copy-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 6px;
+  padding: 4px 6px;
+  border-radius: 3px;
+  opacity: 0.5;
+  transition: opacity 0.15s, background 0.15s;
+}
+.student-copy-btn:hover {
+  opacity: 1;
+  background: rgba(184, 138, 60, 0.12);
+}
+
+.student-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.student-action-btn {
+  background: transparent;
+  border: 1px solid rgba(44, 71, 89, 0.25);
+  color: var(--iluntze);
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-family: var(--font-inter-stack);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.student-action-btn:hover:not(:disabled) {
+  border-color: var(--urrea);
+  color: var(--ilun);
+}
+.student-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.student-action-danger:hover:not(:disabled) {
+  border-color: var(--sugaar);
+  color: var(--sugaar);
+}
+
+/* ============================================
+   PANEL DEL ALUMNO (/ikasle/...)
+   ============================================ */
+.student-shell {
+  min-height: 100vh;
+  background: var(--ilun);
+  color: var(--argi);
+  position: relative;
+  overflow: hidden;
+}
+.student-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 18% 28%, rgba(212,168,92,0.25), transparent),
+    radial-gradient(1.5px 1.5px at 76% 22%, rgba(212,168,92,0.3), transparent),
+    radial-gradient(1px 1px at 48% 78%, rgba(212,168,92,0.2), transparent),
+    radial-gradient(1.5px 1.5px at 68% 88%, rgba(212,168,92,0.25), transparent),
+    radial-gradient(1px 1px at 90% 65%, rgba(212,168,92,0.2), transparent);
+  pointer-events: none;
+}
+
+.student-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 40px;
+  border-bottom: 1px solid rgba(184, 138, 60, 0.15);
+}
+.student-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--argi);
+  text-decoration: none;
+  opacity: 0.95;
+  transition: opacity 0.2s;
+}
+.student-logo:hover { opacity: 1; }
+.student-logo-text {
+  font-family: var(--font-fraunces-stack);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+
+.student-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.student-user-name {
+  font-size: 14px;
+  color: rgba(239, 229, 208, 0.9);
+  font-weight: 500;
+}
+.student-logout-btn {
+  background: transparent;
+  border: 1px solid rgba(239, 229, 208, 0.3);
+  color: var(--argi);
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: var(--font-inter-stack);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.student-logout-btn:hover {
+  border-color: var(--urrea-light);
+  color: var(--urrea-light);
+}
+
+.student-main {
+  position: relative;
+  z-index: 1;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 64px 40px 80px;
+}
+
+.student-welcome {
+  text-align: center;
+  margin-bottom: 80px;
+}
+.student-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: var(--urrea-light);
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+.student-title {
+  font-family: var(--font-fraunces-stack);
+  font-variation-settings: 'opsz' 144, 'SOFT' 30;
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 500;
+  line-height: 1.08;
+  color: var(--argi);
+  margin-bottom: 18px;
+  letter-spacing: -0.02em;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.student-subtitle {
+  font-size: 16px;
+  color: rgba(239, 229, 208, 0.75);
+  line-height: 1.65;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.student-section-title {
+  font-family: var(--font-fraunces-stack);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--argi);
+  margin-bottom: 24px;
+  letter-spacing: -0.01em;
+  text-align: center;
+  opacity: 0.92;
+}
+
+.student-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.student-tool-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(184, 138, 60, 0.22);
+  border-radius: 6px;
+  padding: 28px 22px 22px;
+  text-align: center;
+  position: relative;
+  opacity: 0.78;
+}
+.student-tool-icon {
+  color: var(--urrea-light);
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+.student-tool-roman {
+  font-family: var(--font-fraunces-stack);
+  font-variation-settings: 'opsz' 144, 'WONK' 1;
+  font-size: 16px;
+  color: var(--urrea-light);
+  opacity: 0.5;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+.student-tool-name {
+  font-family: var(--font-fraunces-stack);
+  font-variation-settings: 'opsz' 144;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--argi);
+  line-height: 1.3;
+  margin-bottom: 14px;
+}
+.student-soon-badge {
+  display: inline-block;
+  background: rgba(194, 70, 23, 0.18);
+  color: var(--sutea);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+}
+
+@media (max-width: 900px) {
+  .student-header { padding: 16px 24px; }
+  .student-main { padding: 48px 24px 60px; }
+  .student-tools-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .student-tools-grid { grid-template-columns: 1fr; }
 }
