@@ -11,9 +11,10 @@ export default function LoginPage() {
     <main className="auth-screen">
       <AuthHeader />
       <AuthForm
+        mode="login"
         eyebrow="Saioa hasi"
         title="Sartu kobazulora."
-        subtitle="Idatzi zure helbide elektronikoa eta esteka bat bidaliko dizugu saioa hasteko. Pasahitzik ez dugu eskatzen."
+        subtitle="Sartu zure helbide elektronikoa eta pasahitza zure kontuan sartzeko."
         alternativeText="Ez duzu konturik oraindik?"
         alternativeLabel="Eman izena"
         alternativeHref="/izen-ematea"

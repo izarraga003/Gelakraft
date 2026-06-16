@@ -11,9 +11,10 @@ export default function SignupPage() {
     <main className="auth-screen">
       <AuthHeader />
       <AuthForm
+        mode="signup"
         eyebrow="Izen-ematea"
         title="Anbotoko atea ireki."
-        subtitle="Eman izena GELAKRAFTen. Doan, segundo batzuetan. Email bat besterik ez dugu eskatzen — ezta pasahitzik ere."
+        subtitle="Eman izena GELAKRAFTen. Doan, segundo batzuetan. Helbide elektroniko bat baieztatuko duzu eta pasahitz bat aukeratuko duzu."
         alternativeText="Baduzu kontua?"
         alternativeLabel="Saioa hasi"
         alternativeHref="/saioa-hasi"

@@ -41,7 +41,9 @@ npm install
 3. Copiar y pegar todo el contenido de `supabase/schema.sql` del proyecto.
 4. **Run**. Crea las tablas `profiles` y `classrooms` con RLS activado.
 
-### 4. Configurar las URLs de autenticación
+### 4. Configurar Authentication en Supabase
+
+#### 4.1. URLs
 
 1. En Supabase: **Authentication** → **URL Configuration**.
 2. **Site URL**: `https://gelakraft.eus`
@@ -49,6 +51,56 @@ npm install
    - `https://gelakraft.eus/auth/callback`
    - `http://localhost:3000/auth/callback` (para desarrollo)
 4. Save.
+
+#### 4.2. Confirmación de email obligatoria
+
+1. **Authentication** → **Providers** → **Email**.
+2. Asegúrate de que **"Confirm email"** está **activado** (toggle en azul/verde).
+3. Esto hace que cada nuevo usuario reciba un email de confirmación al registrarse y deba pulsar el enlace antes de poder iniciar sesión. **Solo se manda este email una vez en la vida del usuario.**
+4. Save.
+
+#### 4.3. Personalizar templates de email (recomendado)
+
+En **Authentication** → **Email Templates** hay tres plantillas que recibirá el usuario:
+
+- **Confirm signup** — al registrarse. La debe personalizar a euskera y branding GELAKRAFT.
+- **Reset password** — cuando pide recuperar contraseña. Igual.
+- **Magic Link** — no la usamos, puedes ignorarla.
+
+Ejemplo de "Confirm signup" en euskera:
+
+```
+Asunto: Baieztatu zure GELAKRAFT kontua
+
+Kaixo,
+
+Eskerrik asko GELAKRAFTen izena emateagatik. Sakatu beheko esteka
+zure kontua aktibatzeko:
+
+{{ .ConfirmationURL }}
+
+Esteka 24 ordutan iraungiko da.
+
+Mariren bedeinkapenak,
+GELAKRAFT taldea — Anbotoko kobazulotik
+```
+
+Ejemplo de "Reset password" en euskera:
+
+```
+Asunto: Berreskuratu zure GELAKRAFT pasahitza
+
+Kaixo,
+
+Pasahitza berreskuratzeko eskaera bat jaso dugu. Sakatu beheko
+estekan pasahitz berri bat sortzeko:
+
+{{ .ConfirmationURL }}
+
+Eskaera hori egin ez baduzu, ahaztu email hau.
+
+GELAKRAFT taldea — Anbotoko kobazulotik
+```
 
 ### 5. Obtener las credenciales
 
@@ -146,37 +198,35 @@ gelakraft/
 
 ## Cómo funciona la autenticación
 
-**Magic link sin contraseña.** Flujo:
+**Email + contraseña** con confirmación de email obligatoria al registrarse (una vez).
 
-1. Usuario introduce email en `/saioa-hasi` o `/izen-ematea`.
-2. Supabase envía un email con un enlace único.
-3. Usuario hace click → llega a `/auth/callback?code=...`.
-4. El handler intercambia el código por una sesión (cookies firmadas).
-5. Redirección a `/panela`.
+### Registro
 
-Si el usuario no existía, Supabase lo crea automáticamente. Un trigger SQL
-crea automáticamente su perfil en la tabla `profiles`.
+1. Usuario va a `/izen-ematea` → introduce email + contraseña + confirmar contraseña.
+2. Supabase envía un email de confirmación.
+3. Usuario hace click en el enlace → llega a `/auth/callback?code=...`.
+4. El handler intercambia el código por una sesión y redirige a `/panela`.
+5. Un trigger SQL crea automáticamente el perfil en la tabla `profiles`.
 
-### Personalizar el email (opcional pero recomendable)
+### Login
 
-En Supabase: **Authentication** → **Email Templates** → **Magic Link**.
+1. Usuario va a `/saioa-hasi` → introduce email + contraseña.
+2. Supabase valida y devuelve sesión (cookies firmadas).
+3. Redirección a `/panela`.
 
-Sustituir el contenido por una versión en euskera con el branding de GELAKRAFT.
-Ejemplo de plantilla:
+### Recuperación de contraseña
 
-```
-Asunto: Zure GELAKRAFT esteka
+1. Usuario va a `/pasahitza-berreskuratu` → introduce su email.
+2. Supabase envía un email con un enlace de recuperación.
+3. Click en el enlace → llega a `/auth/callback?type=recovery&code=...`.
+4. El callback detecta `type=recovery` y redirige a `/auth/pasahitza-aldatu`.
+5. Usuario establece una nueva contraseña → vuelve al panel autenticado.
 
-Kaixo,
+### Reglas
 
-Hau da zure esteka GELAKRAFTen sartzeko:
-{{ .ConfirmationURL }}
-
-Esteka 1 ordutan iraungiko da.
-
-Ondo izan,
-GELAKRAFT taldea — Anbotoko kobazulotik
-```
+- Pasahitza: mínimo **8 caracteres**.
+- Sin confirmar email: no se puede hacer login (se muestra un mensaje claro).
+- Sesiones gestionadas por Supabase con cookies firmadas (Server-Side).
 
 ---
 
