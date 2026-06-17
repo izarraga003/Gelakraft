@@ -180,3 +180,48 @@ export async function deleteStudent(
   revalidatePath(`/panela/ikasgela/${classroomId}`)
   return { success: true }
 }
+
+/**
+ * Aplica una recompensa o penalización a TODOS los alumnos de una ikasgela.
+ *
+ * Genérica: vale para cualquier herramienta (isiltasun-erronka, ustekabeko, etc.).
+ * Verifica que el profesor sea dueño de la ikasgela.
+ */
+export async function applyRewardToClassroom(
+  classroomId: string,
+  xpDelta: number,
+  heartsDelta: number
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Saioa hasi behar duzu.' }
+  }
+
+  // Verificar ownership
+  const { data: classroom } = await supabase
+    .from('classrooms')
+    .select('id, teacher_id')
+    .eq('id', classroomId)
+    .single()
+
+  if (!classroom || classroom.teacher_id !== user.id) {
+    return { success: false, error: 'Ikasgela hori ez da zurea.' }
+  }
+
+  const { error } = await supabase.rpc('apply_battle_result', {
+    p_classroom_id: classroomId,
+    p_xp_delta: xpDelta,
+    p_hearts_delta: heartsDelta,
+  })
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath(`/panela/ikasgela/${classroomId}`)
+  return { success: true }
+}

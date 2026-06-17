@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import StudentsTable from './StudentsTable'
 import {
   FlameIcon,
+  SilenceMoonIcon,
   HourglassIcon,
   StopwatchIcon,
   D20Icon,
@@ -88,6 +89,21 @@ export default async function ClassroomDetailPage({
               <h3 className="classroom-tool-name">Sugaarren aurkako borroka</h3>
               <p className="classroom-tool-desc">
                 Galderak ahoz egin eta klasea Sugaarren aurka borrokatu.
+              </p>
+              <span className="classroom-tool-cta">Hasi →</span>
+            </Link>
+
+            <Link
+              href={`/panela/ikasgela/${id}/isiltasuna`}
+              className="classroom-tool-card classroom-tool-active"
+            >
+              <div className="classroom-tool-icon">
+                <SilenceMoonIcon size={36} />
+              </div>
+              <div className="classroom-tool-roman">II</div>
+              <h3 className="classroom-tool-name">Mariren isiltasun-erronka</h3>
+              <p className="classroom-tool-desc">
+                Klasea isilik mantendu Mari ez esnatzeko. Zarata-maila neurtzen da.
               </p>
               <span className="classroom-tool-cta">Hasi →</span>
             </Link>

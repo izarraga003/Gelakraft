@@ -108,7 +108,7 @@ export default function Kronometroa({ classroomId, classroomName }: KronometroaP
 
         {laps.length > 0 && (
           <div className="tool-laps">
-            <h3 className="tool-laps-title">Itzalpeak ({laps.length})</h3>
+            <h3 className="tool-laps-title">Markak ({laps.length})</h3>
             <ol className="tool-laps-list">
               {laps.map((lap, idx) => {
                 const f = formatMs(lap)
@@ -134,7 +134,7 @@ export default function Kronometroa({ classroomId, classroomName }: KronometroaP
           onClick={handleLap}
           disabled={phase !== 'running'}
         >
-          🚩 Itzalpea
+          🚩 Marka
         </button>
         <button
           type="button"
