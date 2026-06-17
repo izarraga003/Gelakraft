@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { generateUsername, uniqueUsername } from './generate-username'
 import { generatePassword } from './generate-password'
+import { randomHeroClass } from './hero-class'
 
 const BCRYPT_ROUNDS = 10
 
@@ -77,6 +78,7 @@ export async function createStudents(
     username: string
     password_hash: string
     password_plain: string
+    hero_class: string
   }[] = []
 
   for (const fullName of names) {
@@ -93,6 +95,7 @@ export async function createStudents(
       username,
       password_hash: passwordHash,
       password_plain: passwordPlain,
+      hero_class: randomHeroClass(),
     })
     created.push({ fullName, username, passwordPlain })
   }

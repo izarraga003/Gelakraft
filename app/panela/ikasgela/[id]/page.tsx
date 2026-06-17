@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import StudentsTable from './StudentsTable'
+import { FlameIcon } from '@/components/icons'
 
 const STAGE_LABELS: Record<string, string> = {
   lehen: 'Lehen Hezkuntza',
@@ -29,7 +30,6 @@ export default async function ClassroomDetailPage({
     redirect('/saioa-hasi')
   }
 
-  // Carga la ikasgela (RLS filtra automáticamente)
   const { data: classroom } = await supabase
     .from('classrooms')
     .select('id, name, stage, created_at')
@@ -40,10 +40,11 @@ export default async function ClassroomDetailPage({
     notFound()
   }
 
-  // Carga los alumnos de esta ikasgela (RLS filtra)
   const { data: students } = await supabase
     .from('students')
-    .select('id, full_name, username, password_plain, created_at')
+    .select(
+      'id, full_name, username, password_plain, hero_class, xp, hearts, max_hearts, mana, max_mana, created_at'
+    )
     .eq('classroom_id', id)
     .order('full_name', { ascending: true })
 
@@ -63,6 +64,31 @@ export default async function ClassroomDetailPage({
             : `${studentList.length} ikasle.`}
         </p>
       </section>
+
+      {/* Tools section: por ahora solo Sugaarren aurkako borroka */}
+      {studentList.length > 0 && (
+        <section className="panel-section">
+          <div className="panel-section-header">
+            <h2 className="panel-section-title">Tresnak</h2>
+          </div>
+          <div className="classroom-tools-grid">
+            <Link
+              href={`/panela/ikasgela/${id}/borroka`}
+              className="classroom-tool-card classroom-tool-active"
+            >
+              <div className="classroom-tool-icon">
+                <FlameIcon size={36} />
+              </div>
+              <div className="classroom-tool-roman">I</div>
+              <h3 className="classroom-tool-name">Sugaarren aurkako borroka</h3>
+              <p className="classroom-tool-desc">
+                Galderak ahoz egin eta klasea Sugaarren aurka borrokatu.
+              </p>
+              <span className="classroom-tool-cta">Hasi →</span>
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="panel-section">
         <div className="panel-section-header">

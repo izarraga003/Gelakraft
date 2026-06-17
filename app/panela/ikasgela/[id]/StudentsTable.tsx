@@ -2,12 +2,22 @@
 
 import { useState, useTransition } from 'react'
 import { regeneratePassword, deleteStudent } from '@/lib/students/actions'
+import {
+  HERO_CLASS_LABELS,
+  type HeroClass,
+} from '@/lib/students/hero-class'
 
 type Student = {
   id: string
   full_name: string
   username: string
   password_plain: string
+  hero_class: HeroClass
+  xp: number
+  hearts: number
+  max_hearts: number
+  mana: number
+  max_mana: number
   created_at: string
 }
 
@@ -20,15 +30,13 @@ export default function StudentsTable({
   students: initialStudents,
   classroomId,
 }: StudentsTableProps) {
-  // Mantenemos una copia local para mostrar nuevas contraseñas
-  // sin esperar al refresh
   const [students, setStudents] = useState(initialStudents)
   const [isPending, startTransition] = useTransition()
   const [busyId, setBusyId] = useState<string | null>(null)
 
   async function handleRegenerate(studentId: string) {
     const confirmed = window.confirm(
-      '¿Seguru pasahitz berri bat sortu nahi duzula?\n\n¿Sortu nahi duzu pasahitz berri bat?'
+      'Pasahitz berri bat sortu nahi duzu?\n\nIkasleak ezin izango du sartu pasahitz zaharrarekin.'
     )
     if (!confirmed) return
 
@@ -65,15 +73,8 @@ export default function StudentsTable({
     })
   }
 
-  function handleCopy(text: string, label: string) {
-    navigator.clipboard.writeText(text).then(
-      () => {
-        // Feedback simple: nada porque ya hay un visual en el botón
-      },
-      () => {
-        alert(`Ezin izan da kopiatu: ${label}`)
-      }
-    )
+  function handleCopy(text: string) {
+    navigator.clipboard.writeText(text)
   }
 
   return (
@@ -82,8 +83,11 @@ export default function StudentsTable({
         <thead>
           <tr>
             <th>Izen-abizenak</th>
+            <th>Klasea</th>
             <th>Erabiltzailea</th>
             <th>Pasahitza</th>
+            <th>XP</th>
+            <th>Bihotzak</th>
             <th aria-label="Ekintzak"></th>
           </tr>
         </thead>
@@ -92,13 +96,18 @@ export default function StudentsTable({
             <tr key={s.id}>
               <td className="student-name">{s.full_name}</td>
               <td>
+                <span className={`student-hero-class hero-${s.hero_class}`}>
+                  {HERO_CLASS_LABELS[s.hero_class]}
+                </span>
+              </td>
+              <td>
                 <code className="student-code">{s.username}</code>
                 <button
                   type="button"
                   className="student-copy-btn"
-                  onClick={() => handleCopy(s.username, 'erabiltzailea')}
-                  aria-label="Kopiatu erabiltzailea"
+                  onClick={() => handleCopy(s.username)}
                   title="Kopiatu"
+                  aria-label="Kopiatu erabiltzailea"
                 >
                   📋
                 </button>
@@ -108,12 +117,31 @@ export default function StudentsTable({
                 <button
                   type="button"
                   className="student-copy-btn"
-                  onClick={() => handleCopy(s.password_plain, 'pasahitza')}
-                  aria-label="Kopiatu pasahitza"
+                  onClick={() => handleCopy(s.password_plain)}
                   title="Kopiatu"
+                  aria-label="Kopiatu pasahitza"
                 >
                   📋
                 </button>
+              </td>
+              <td className="student-stat-xp">
+                <span className="student-xp-value">{s.xp}</span>
+              </td>
+              <td className="student-stat-hearts">
+                <span className="student-hearts">
+                  {Array.from({ length: s.max_hearts }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={i < s.hearts ? 'heart-full' : 'heart-empty'}
+                      aria-hidden
+                    >
+                      ♥
+                    </span>
+                  ))}
+                </span>
+                <span className="visually-hidden">
+                  {s.hearts} / {s.max_hearts}
+                </span>
               </td>
               <td className="student-actions">
                 <button
