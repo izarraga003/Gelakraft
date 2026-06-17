@@ -93,7 +93,7 @@ export default async function PanelPage() {
       <section className="panel-section">
         <div className="panel-section-header">
           <h2 className="panel-section-title">Tresnak</h2>
-          <span className="panel-section-hint">Datozen astetan eskuragarri</span>
+          <span className="panel-section-hint">Ikasgela bakoitzean eskuragarri</span>
         </div>
 
         <div className="panel-tools-grid">
@@ -157,7 +157,6 @@ function PanelToolPlaceholder({
         <span className="panel-tool-roman">{roman}</span>
       </div>
       <h3 className="panel-tool-name">{name}</h3>
-      <span className="panel-soon-badge">laster</span>
     </article>
   )
 }
