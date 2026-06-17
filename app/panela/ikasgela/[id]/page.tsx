@@ -5,6 +5,7 @@ import StudentsTable from './StudentsTable'
 import {
   FlameIcon,
   SilenceMoonIcon,
+  ChestIcon,
   HourglassIcon,
   StopwatchIcon,
   D20Icon,
@@ -106,6 +107,21 @@ export default async function ClassroomDetailPage({
                 Klasea isilik mantendu Mari ez esnatzeko. Zarata-maila neurtzen da.
               </p>
               <span className="classroom-tool-cta">Hasi →</span>
+            </Link>
+
+            <Link
+              href={`/panela/ikasgela/${id}/ustekabekoa`}
+              className="classroom-tool-card classroom-tool-active"
+            >
+              <div className="classroom-tool-icon">
+                <ChestIcon size={36} />
+              </div>
+              <div className="classroom-tool-roman">III</div>
+              <h3 className="classroom-tool-name">Ustekabeko gertaera</h3>
+              <p className="classroom-tool-desc">
+                Mariren laino artean ezkutatutako gertaera bat aurkitu. Sorta editagarria.
+              </p>
+              <span className="classroom-tool-cta">Aurkitu →</span>
             </Link>
 
             <Link

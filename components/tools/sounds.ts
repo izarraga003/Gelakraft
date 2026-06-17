@@ -9,6 +9,8 @@ type ToolSound =
   | 'ding'      // resultado final del selector
   | 'mari-wake' // Mari se despierta (isiltasun-erronka)
   | 'mari-success' // reto del silencio superado
+  | 'mist'      // niebla disipándose (ustekabeko reveal)
+  | 'reveal'    // texto del evento se asienta
 
 let ctx: AudioContext | null = null
 
@@ -140,5 +142,21 @@ export function playToolSound(kind: ToolSound) {
       tone({ freq: 783.99, duration: 0.55, type: 'triangle', volume: 0.28, delay: 0.12 })
       tone({ freq: 1046.5, duration: 0.55, type: 'sine', volume: 0.2, delay: 0.18 })
       break
+    case 'mist': {
+      // Soplo de niebla: tono muy grave que sube ligero, con armónicas suaves
+      tone({ freq: 65, endFreq: 90, duration: 1.3, type: 'sine', volume: 0.22 })
+      tone({ freq: 130, endFreq: 180, duration: 1.2, type: 'sine', volume: 0.12, delay: 0.05 })
+      // Toque etéreo agudo encima
+      tone({ freq: 1320, endFreq: 880, duration: 1.1, type: 'sine', volume: 0.06, delay: 0.2 })
+      tone({ freq: 1760, endFreq: 1320, duration: 0.9, type: 'sine', volume: 0.04, delay: 0.4 })
+      break
+    }
+    case 'reveal': {
+      // Resolución cálida: dos notas que se asientan
+      tone({ freq: 392, duration: 0.4, type: 'triangle', volume: 0.18 })
+      tone({ freq: 587.33, duration: 0.6, type: 'triangle', volume: 0.2, delay: 0.08 })
+      tone({ freq: 783.99, duration: 0.8, type: 'sine', volume: 0.14, delay: 0.16 })
+      break
+    }
   }
 }
