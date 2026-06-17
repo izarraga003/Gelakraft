@@ -2,7 +2,12 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import StudentsTable from './StudentsTable'
-import { FlameIcon } from '@/components/icons'
+import {
+  FlameIcon,
+  HourglassIcon,
+  StopwatchIcon,
+  D20Icon,
+} from '@/components/icons'
 
 const STAGE_LABELS: Record<string, string> = {
   lehen: 'Lehen Hezkuntza',
@@ -65,7 +70,7 @@ export default async function ClassroomDetailPage({
         </p>
       </section>
 
-      {/* Tools section: por ahora solo Sugaarren aurkako borroka */}
+      {/* Tools section: 4 herramientas activas */}
       {studentList.length > 0 && (
         <section className="panel-section">
           <div className="panel-section-header">
@@ -83,6 +88,51 @@ export default async function ClassroomDetailPage({
               <h3 className="classroom-tool-name">Sugaarren aurkako borroka</h3>
               <p className="classroom-tool-desc">
                 Galderak ahoz egin eta klasea Sugaarren aurka borrokatu.
+              </p>
+              <span className="classroom-tool-cta">Hasi →</span>
+            </Link>
+
+            <Link
+              href={`/panela/ikasgela/${id}/kontaketa`}
+              className="classroom-tool-card classroom-tool-active"
+            >
+              <div className="classroom-tool-icon">
+                <HourglassIcon size={36} />
+              </div>
+              <div className="classroom-tool-roman">IV</div>
+              <h3 className="classroom-tool-name">Atzerako kontaketa</h3>
+              <p className="classroom-tool-desc">
+                Denbora-mugarekin aritzeko cuenta atrás bisuala.
+              </p>
+              <span className="classroom-tool-cta">Hasi →</span>
+            </Link>
+
+            <Link
+              href={`/panela/ikasgela/${id}/kronometroa`}
+              className="classroom-tool-card classroom-tool-active"
+            >
+              <div className="classroom-tool-icon">
+                <StopwatchIcon size={36} />
+              </div>
+              <div className="classroom-tool-roman">V</div>
+              <h3 className="classroom-tool-name">Kronometroa</h3>
+              <p className="classroom-tool-desc">
+                Ariketen denbora neurtu, itzalpeak markatu.
+              </p>
+              <span className="classroom-tool-cta">Hasi →</span>
+            </Link>
+
+            <Link
+              href={`/panela/ikasgela/${id}/hautatzailea`}
+              className="classroom-tool-card classroom-tool-active"
+            >
+              <div className="classroom-tool-icon">
+                <D20Icon size={36} />
+              </div>
+              <div className="classroom-tool-roman">VI</div>
+              <h3 className="classroom-tool-name">Ausazko hautatzailea</h3>
+              <p className="classroom-tool-desc">
+                Ikasle bat ausaz aukeratzeko sistema.
               </p>
               <span className="classroom-tool-cta">Hasi →</span>
             </Link>
