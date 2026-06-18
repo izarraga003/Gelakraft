@@ -1,10 +1,12 @@
 import { HERO_CLASS_LABELS, type HeroClass } from '@/lib/students/hero-class'
 import { xpToLevel } from '@/lib/students/level'
+import { sanitizeAvatarConfig, type AvatarConfig } from '@/lib/students/avatar'
+import AvatarRender from './AvatarRender'
 
 type RankingEntry = {
   id: string
   full_name: string
-  avatar: string
+  avatar_config: AvatarConfig
   hero_class: HeroClass
   xp: number
   hearts: number
@@ -22,9 +24,7 @@ export default function ClassroomRanking({
   currentStudentId,
   position,
 }: Props) {
-  if (ranking.length === 0) {
-    return null
-  }
+  if (ranking.length === 0) return null
 
   const top10 = ranking.slice(0, 10)
   const meInTop10 = top10.some((r) => r.id === currentStudentId)
@@ -47,6 +47,7 @@ export default function ClassroomRanking({
           const place = idx + 1
           const medal =
             place === 1 ? '🥇' : place === 2 ? '🥈' : place === 3 ? '🥉' : null
+          const cfg = sanitizeAvatarConfig(entry.avatar_config, 99)
           return (
             <li
               key={entry.id}
@@ -55,8 +56,8 @@ export default function ClassroomRanking({
               <span className="ranking-place">
                 {medal ?? `#${place}`}
               </span>
-              <span className="ranking-avatar" aria-hidden="true">
-                {entry.avatar}
+              <span className="ranking-avatar-wrapper" aria-hidden="true">
+                <AvatarRender config={cfg} size={36} />
               </span>
               <div className="ranking-info">
                 <span className="ranking-name">
@@ -76,7 +77,6 @@ export default function ClassroomRanking({
           )
         })}
 
-        {/* Si el alumno no está en top 10, mostrarlo destacado al final */}
         {!meInTop10 && me && (
           <>
             <li className="ranking-divider" aria-hidden="true">
@@ -84,8 +84,11 @@ export default function ClassroomRanking({
             </li>
             <li className="ranking-item ranking-item-me">
               <span className="ranking-place">#{position}</span>
-              <span className="ranking-avatar" aria-hidden="true">
-                {me.avatar}
+              <span className="ranking-avatar-wrapper" aria-hidden="true">
+                <AvatarRender
+                  config={sanitizeAvatarConfig(me.avatar_config, 99)}
+                  size={36}
+                />
               </span>
               <div className="ranking-info">
                 <span className="ranking-name">

@@ -1,12 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import AvatarPicker from './AvatarPicker'
-import { HERO_CLASS_LABELS, HERO_CLASS_DESCRIPTIONS, type HeroClass } from '@/lib/students/hero-class'
+import AvatarRender from './AvatarRender'
+import AvatarBuilder from './AvatarBuilder'
+import {
+  HERO_CLASS_LABELS,
+  HERO_CLASS_DESCRIPTIONS,
+  type HeroClass,
+} from '@/lib/students/hero-class'
 import { levelProgress } from '@/lib/students/level'
+import {
+  sanitizeAvatarConfig,
+  type AvatarConfig,
+} from '@/lib/students/avatar'
 
 type HeroCardProps = {
-  avatar: string
+  avatarConfig: AvatarConfig
   fullName: string
   username: string
   heroClass: HeroClass
@@ -18,7 +27,7 @@ type HeroCardProps = {
 }
 
 export default function HeroCard({
-  avatar,
+  avatarConfig,
   fullName,
   username,
   heroClass,
@@ -28,8 +37,10 @@ export default function HeroCard({
   mana,
   maxMana,
 }: HeroCardProps) {
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [currentAvatar, setCurrentAvatar] = useState(avatar)
+  const [builderOpen, setBuilderOpen] = useState(false)
+  const [currentAvatar, setCurrentAvatar] = useState<AvatarConfig>(
+    sanitizeAvatarConfig(avatarConfig, 99)
+  )
 
   const progress = levelProgress(xp)
 
@@ -39,13 +50,11 @@ export default function HeroCard({
         <button
           type="button"
           className="hero-avatar-btn"
-          onClick={() => setPickerOpen(true)}
-          aria-label="Avatara aldatu"
-          title="Avatara aldatu"
+          onClick={() => setBuilderOpen(true)}
+          aria-label="Pertsonaia aldatu"
+          title="Pertsonaia aldatu"
         >
-          <span className="hero-avatar-emoji" role="img">
-            {currentAvatar}
-          </span>
+          <AvatarRender config={currentAvatar} size={132} />
           <span className="hero-avatar-edit-hint" aria-hidden="true">
             ✏
           </span>
@@ -110,11 +119,12 @@ export default function HeroCard({
         </div>
       </article>
 
-      {pickerOpen && (
-        <AvatarPicker
-          currentAvatar={currentAvatar}
-          onClose={() => setPickerOpen(false)}
-          onChange={(newAvatar) => setCurrentAvatar(newAvatar)}
+      {builderOpen && (
+        <AvatarBuilder
+          currentConfig={currentAvatar}
+          level={progress.level}
+          onClose={() => setBuilderOpen(false)}
+          onChange={(c) => setCurrentAvatar(c)}
         />
       )}
     </>

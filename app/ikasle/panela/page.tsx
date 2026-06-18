@@ -2,10 +2,13 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getStudent } from '@/lib/students/session'
 import { loadStudentDashboard } from '@/lib/students/dashboard'
+import { sanitizeAvatarConfig } from '@/lib/students/avatar'
 import { MoonIcon } from '@/components/icons'
 import HeroCard from '@/components/student/HeroCard'
 import ClassroomRanking from '@/components/student/ClassroomRanking'
 import ActivityLog from '@/components/student/ActivityLog'
+import AvatarRender from '@/components/student/AvatarRender'
+import AmbientMusic from '@/components/audio/AmbientMusic'
 
 export default async function StudentPanelPage() {
   const sessionStudent = await getStudent()
@@ -38,6 +41,7 @@ export default async function StudentPanelPage() {
   }
 
   const { student, classroom, ranking, position, activities } = data
+  const safeAvatar = sanitizeAvatarConfig(student.avatar_config, 99)
 
   return (
     <div className="student-shell">
@@ -47,10 +51,11 @@ export default async function StudentPanelPage() {
           <span className="student-logo-text">GELAKRAFT</span>
         </Link>
         <div className="student-user">
-          <span className="student-user-avatar" aria-hidden="true">
-            {student.avatar}
+          <span className="student-user-avatar-mini" aria-hidden="true">
+            <AvatarRender config={safeAvatar} size={36} />
           </span>
           <span className="student-user-name">{student.full_name}</span>
+          <AmbientMusic />
           <form action="/ikasle/atera" method="POST">
             <button type="submit" className="student-logout-btn">
               Atera
@@ -66,7 +71,7 @@ export default async function StudentPanelPage() {
         </div>
 
         <HeroCard
-          avatar={student.avatar}
+          avatarConfig={safeAvatar}
           fullName={student.full_name}
           username={student.username}
           heroClass={student.hero_class}

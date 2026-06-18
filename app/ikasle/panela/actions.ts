@@ -3,28 +3,43 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getStudentSession } from '@/lib/students/session'
-import { isValidAvatar } from '@/lib/students/avatars'
+import {
+  sanitizeAvatarConfig,
+  type AvatarConfig,
+} from '@/lib/students/avatar'
+import { xpToLevel } from '@/lib/students/level'
 
 /**
  * Actualiza el avatar del alumno actual (basado en su iron-session).
- * Valida que el avatar sea uno del set predefinido.
+ * Sanea la config y verifica que todas las opciones están desbloqueadas para su nivel.
  */
 export async function updateStudentAvatar(
-  newAvatar: string
+  newConfig: AvatarConfig
 ): Promise<{ success: boolean; error?: string }> {
   const session = await getStudentSession()
   if (!session.studentId) {
     return { success: false, error: 'Saioa galdu da. Sartu berriro.' }
   }
 
-  if (!isValidAvatar(newAvatar)) {
-    return { success: false, error: 'Avatar baliogabea.' }
+  const supabase = await createClient()
+
+  // Obtener el nivel actual del alumno para validar
+  const { data: student } = await supabase
+    .from('students')
+    .select('xp')
+    .eq('id', session.studentId)
+    .single()
+
+  if (!student) {
+    return { success: false, error: 'Ikaslea ez da aurkitu.' }
   }
 
-  const supabase = await createClient()
+  const level = xpToLevel(student.xp)
+  const sanitized = sanitizeAvatarConfig(newConfig, level)
+
   const { error } = await supabase.rpc('update_student_avatar', {
     p_student_id: session.studentId,
-    p_avatar: newAvatar,
+    p_avatar_config: sanitized,
   })
 
   if (error) {

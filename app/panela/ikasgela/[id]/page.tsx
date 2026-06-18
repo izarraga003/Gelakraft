@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import StudentsTable from './StudentsTable'
+import StudentsGrid from './StudentsGrid'
 import {
   FlameIcon,
   SilenceMoonIcon,
@@ -50,7 +50,7 @@ export default async function ClassroomDetailPage({
   const { data: students } = await supabase
     .from('students')
     .select(
-      'id, full_name, username, password_plain, hero_class, avatar, xp, hearts, max_hearts, mana, max_mana, created_at'
+      'id, full_name, username, password_plain, hero_class, avatar_config, xp, hearts, max_hearts, mana, max_mana, created_at'
     )
     .eq('classroom_id', id)
     .order('full_name', { ascending: true })
@@ -72,106 +72,7 @@ export default async function ClassroomDetailPage({
         </p>
       </section>
 
-      {/* Tools section: 4 herramientas activas */}
-      {studentList.length > 0 && (
-        <section className="panel-section">
-          <div className="panel-section-header">
-            <h2 className="panel-section-title">Tresnak</h2>
-          </div>
-          <div className="classroom-tools-grid">
-            <Link
-              href={`/panela/ikasgela/${id}/borroka`}
-              className="classroom-tool-card classroom-tool-active"
-            >
-              <div className="classroom-tool-icon">
-                <FlameIcon size={36} />
-              </div>
-              <div className="classroom-tool-roman">I</div>
-              <h3 className="classroom-tool-name">Sugaarren aurkako borroka</h3>
-              <p className="classroom-tool-desc">
-                Galderak ahoz egin eta klasea Sugaarren aurka borrokatu.
-              </p>
-              <span className="classroom-tool-cta">Hasi →</span>
-            </Link>
-
-            <Link
-              href={`/panela/ikasgela/${id}/isiltasuna`}
-              className="classroom-tool-card classroom-tool-active"
-            >
-              <div className="classroom-tool-icon">
-                <SilenceMoonIcon size={36} />
-              </div>
-              <div className="classroom-tool-roman">II</div>
-              <h3 className="classroom-tool-name">Mariren isiltasun-erronka</h3>
-              <p className="classroom-tool-desc">
-                Klasea isilik mantendu Mari ez esnatzeko. Zarata-maila neurtzen da.
-              </p>
-              <span className="classroom-tool-cta">Hasi →</span>
-            </Link>
-
-            <Link
-              href={`/panela/ikasgela/${id}/ustekabekoa`}
-              className="classroom-tool-card classroom-tool-active"
-            >
-              <div className="classroom-tool-icon">
-                <ChestIcon size={36} />
-              </div>
-              <div className="classroom-tool-roman">III</div>
-              <h3 className="classroom-tool-name">Ustekabeko gertaera</h3>
-              <p className="classroom-tool-desc">
-                Mariren laino artean ezkutatutako gertaera bat aurkitu. Sorta editagarria.
-              </p>
-              <span className="classroom-tool-cta">Aurkitu →</span>
-            </Link>
-
-            <Link
-              href={`/panela/ikasgela/${id}/kontaketa`}
-              className="classroom-tool-card classroom-tool-active"
-            >
-              <div className="classroom-tool-icon">
-                <HourglassIcon size={36} />
-              </div>
-              <div className="classroom-tool-roman">IV</div>
-              <h3 className="classroom-tool-name">Atzerako kontaketa</h3>
-              <p className="classroom-tool-desc">
-                Denbora-mugarekin aritzeko cuenta atrás bisuala.
-              </p>
-              <span className="classroom-tool-cta">Hasi →</span>
-            </Link>
-
-            <Link
-              href={`/panela/ikasgela/${id}/kronometroa`}
-              className="classroom-tool-card classroom-tool-active"
-            >
-              <div className="classroom-tool-icon">
-                <StopwatchIcon size={36} />
-              </div>
-              <div className="classroom-tool-roman">V</div>
-              <h3 className="classroom-tool-name">Kronometroa</h3>
-              <p className="classroom-tool-desc">
-                Ariketen denbora neurtu, itzalpeak markatu.
-              </p>
-              <span className="classroom-tool-cta">Hasi →</span>
-            </Link>
-
-            <Link
-              href={`/panela/ikasgela/${id}/hautatzailea`}
-              className="classroom-tool-card classroom-tool-active"
-            >
-              <div className="classroom-tool-icon">
-                <D20Icon size={36} />
-              </div>
-              <div className="classroom-tool-roman">VI</div>
-              <h3 className="classroom-tool-name">Ausazko hautatzailea</h3>
-              <p className="classroom-tool-desc">
-                Ikasle bat ausaz aukeratzeko sistema.
-              </p>
-              <span className="classroom-tool-cta">Hasi →</span>
-            </Link>
-          </div>
-        </section>
-      )}
-
+      {/* SECCIÓN 1: ALUMNOS (ARRIBA) */}
       <section className="panel-section">
         <div className="panel-section-header">
           <h2 className="panel-section-title">Ikasleak</h2>
@@ -191,9 +92,62 @@ export default async function ClassroomDetailPage({
             </p>
           </div>
         ) : (
-          <StudentsTable students={studentList} classroomId={id} />
+          <StudentsGrid students={studentList} classroomId={id} />
         )}
       </section>
+
+      {/* SECCIÓN 2: HERRAMIENTAS (DEBAJO) */}
+      {studentList.length > 0 && (
+        <section className="panel-section">
+          <div className="panel-section-header">
+            <h2 className="panel-section-title">Tresnak</h2>
+          </div>
+          <div className="classroom-tools-grid">
+            <ToolCard
+              href={`/panela/ikasgela/${id}/borroka`}
+              icon={<FlameIcon size={36} />}
+              roman="I"
+              name="Sugaarren aurkako borroka"
+              desc="Galderak ahoz egin eta klasea Sugaarren aurka borrokatu."
+            />
+            <ToolCard
+              href={`/panela/ikasgela/${id}/isiltasuna`}
+              icon={<SilenceMoonIcon size={36} />}
+              roman="II"
+              name="Mariren isiltasun-erronka"
+              desc="Klasea isilik mantendu Mari ez esnatzeko. Zarata-maila neurtzen da."
+            />
+            <ToolCard
+              href={`/panela/ikasgela/${id}/ustekabekoa`}
+              icon={<ChestIcon size={36} />}
+              roman="III"
+              name="Ustekabeko gertaera"
+              desc="Mariren laino artean ezkutatutako gertaera bat aurkitu."
+            />
+            <ToolCard
+              href={`/panela/ikasgela/${id}/kontaketa`}
+              icon={<HourglassIcon size={36} />}
+              roman="IV"
+              name="Atzerako kontaketa"
+              desc="Denbora-mugarekin aritzeko cuenta atrás bisuala."
+            />
+            <ToolCard
+              href={`/panela/ikasgela/${id}/kronometroa`}
+              icon={<StopwatchIcon size={36} />}
+              roman="V"
+              name="Kronometroa"
+              desc="Ariketen denbora neurtu, markak markatu."
+            />
+            <ToolCard
+              href={`/panela/ikasgela/${id}/hautatzailea`}
+              icon={<D20Icon size={36} />}
+              roman="VI"
+              name="Ausazko hautatzailea"
+              desc="Ikasle bat ausaz aukeratzeko sistema."
+            />
+          </div>
+        </section>
+      )}
 
       <section className="panel-meta">
         <p>
@@ -202,5 +156,29 @@ export default async function ClassroomDetailPage({
         </p>
       </section>
     </div>
+  )
+}
+
+function ToolCard({
+  href,
+  icon,
+  roman,
+  name,
+  desc,
+}: {
+  href: string
+  icon: React.ReactNode
+  roman: string
+  name: string
+  desc: string
+}) {
+  return (
+    <Link href={href} className="classroom-tool-card classroom-tool-active">
+      <div className="classroom-tool-icon">{icon}</div>
+      <div className="classroom-tool-roman">{roman}</div>
+      <h3 className="classroom-tool-name">{name}</h3>
+      <p className="classroom-tool-desc">{desc}</p>
+      <span className="classroom-tool-cta">Hasi →</span>
+    </Link>
   )
 }

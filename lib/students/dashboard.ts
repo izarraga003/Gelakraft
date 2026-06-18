@@ -1,9 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { HeroClass } from './hero-class'
-
-// ============================================================
-// TIPOS
-// ============================================================
+import type { AvatarConfig } from './avatar'
 
 export type StudentDashboardData = {
   student: {
@@ -11,7 +8,8 @@ export type StudentDashboardData = {
     classroom_id: string
     full_name: string
     username: string
-    avatar: string
+    avatar: string // legacy emoji
+    avatar_config: AvatarConfig
     hero_class: HeroClass
     xp: number
     hearts: number
@@ -31,6 +29,7 @@ export type StudentDashboardData = {
     id: string
     full_name: string
     avatar: string
+    avatar_config: AvatarConfig
     hero_class: HeroClass
     xp: number
     hearts: number
@@ -39,24 +38,19 @@ export type StudentDashboardData = {
   position: number
   activities: {
     id: string
-    activity_type: 'battle' | 'silence' | 'event' | 'reward'
+    activity_type: 'battle' | 'silence' | 'event' | 'reward' | 'adjustment'
     outcome: 'victory' | 'defeat' | 'success' | 'failure' | 'neutral'
     xp_delta: number
     hearts_delta: number
     metadata: Record<string, unknown>
     created_at: string
+    is_personal: boolean
+    affected_count: number | null
   }[]
 }
 
-// ============================================================
-// DATA FETCHING
-// ============================================================
-
 /**
- * Carga todo el dashboard del alumno mediante la función SQL
- * SECURITY DEFINER get_student_dashboard.
- *
- * Devuelve null si el student no existe.
+ * Carga el dashboard del alumno via función RPC SECURITY DEFINER.
  */
 export async function loadStudentDashboard(
   studentId: string

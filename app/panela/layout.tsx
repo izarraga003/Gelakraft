@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { MoonIcon } from '@/components/icons'
+import AmbientMusic from '@/components/audio/AmbientMusic'
 
 /**
  * Layout protegido del panel.
@@ -33,6 +34,7 @@ export default async function PanelLayout({
         </Link>
 
         <div className="panel-user">
+          <AmbientMusic />
           <span className="panel-user-email" title={user.email ?? ''}>
             {user.email}
           </span>

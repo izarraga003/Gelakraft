@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { generateUsername, uniqueUsername } from './generate-username'
 import { generatePassword } from './generate-password'
 import { randomHeroClass } from './hero-class'
-import { randomAvatar } from './avatars'
+import { randomAvatarConfig } from './avatar'
 
 const BCRYPT_ROUNDS = 10
 
@@ -80,7 +80,7 @@ export async function createStudents(
     password_hash: string
     password_plain: string
     hero_class: string
-    avatar: string
+    avatar_config: object
   }[] = []
 
   for (const fullName of names) {
@@ -98,7 +98,7 @@ export async function createStudents(
       password_hash: passwordHash,
       password_plain: passwordPlain,
       hero_class: randomHeroClass(),
-      avatar: randomAvatar(),
+      avatar_config: randomAvatarConfig(),
     })
     created.push({ fullName, username, passwordPlain })
   }
