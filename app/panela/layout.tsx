@@ -6,9 +6,6 @@ import AmbientMusic from '@/components/audio/AmbientMusic'
 
 /**
  * Layout protegido del panel.
- *
- * El middleware ya redirige a /saioa-hasi si no hay sesión, pero
- * hacemos doble check aquí por seguridad (defense in depth).
  */
 export default async function PanelLayout({
   children,

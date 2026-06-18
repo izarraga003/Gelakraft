@@ -1,4 +1,5 @@
 import Hero from '@/components/Hero'
+import HowItWorksSection from '@/components/HowItWorksSection'
 import ToolsSection from '@/components/ToolsSection'
 import MythologySection from '@/components/MythologySection'
 import AudienceSection from '@/components/AudienceSection'
@@ -10,6 +11,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <HowItWorksSection />
       <ToolsSection />
       <MythologySection />
       <AudienceSection />

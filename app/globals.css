@@ -7569,3 +7569,547 @@ a {
   opacity: 0.8;
   letter-spacing: 0.02em;
 }
+
+/* ============================================
+   EMOJI RAIN: easter egg interactivo
+   ============================================ */
+.emoji-rain-wrap {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  overflow: visible;
+}
+.emoji-rain-layer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 9999;
+}
+.emoji-rain-drop {
+  position: absolute;
+  font-size: 22px;
+  user-select: none;
+  pointer-events: none;
+  animation: emoji-drop 1.6s ease-out forwards;
+  transform-origin: center;
+}
+@keyframes emoji-drop {
+  0% {
+    transform: translate(-50%, -50%) scale(var(--scale, 1)) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--drift-x, 0px)), calc(-50% + 180px)) scale(var(--scale, 1)) rotate(var(--rot, 0deg));
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   HOW IT WORKS SECTION (homepage)
+   ============================================ */
+.how-section {
+  background: var(--argi-warm);
+  padding: 80px 24px;
+  border-top: 1px solid rgba(184, 138, 60, 0.15);
+  border-bottom: 1px solid rgba(184, 138, 60, 0.15);
+}
+.how-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.how-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-family: var(--font-inter-stack);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sugaar);
+  margin-bottom: 12px;
+}
+.how-title {
+  font-family: var(--font-fraunces-stack);
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 600;
+  margin: 0 0 18px;
+  color: var(--ilun);
+  line-height: 1.1;
+  max-width: 760px;
+}
+.how-accent {
+  background: linear-gradient(120deg, var(--urrea), var(--sugaar));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.how-lead {
+  font-size: clamp(15px, 2.2vw, 18px);
+  color: var(--iluntze);
+  line-height: 1.55;
+  max-width: 720px;
+  margin: 0 0 40px;
+}
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-bottom: 32px;
+}
+.how-card {
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.2);
+  border-radius: 10px;
+  padding: 22px 22px 18px;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.how-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+.how-card-icon {
+  display: inline-block;
+  font-size: 38px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s;
+}
+.how-card-icon:hover { transform: scale(1.15); }
+.how-card-title {
+  font-family: var(--font-fraunces-stack);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ilun);
+  margin: 0 0 10px;
+}
+.how-card-desc {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--iluntze);
+  margin: 0 0 14px;
+}
+.how-card-hint {
+  font-size: 11px;
+  color: var(--sugaar);
+  font-style: italic;
+  margin: 0;
+  opacity: 0.75;
+  letter-spacing: 0.02em;
+}
+.how-foot {
+  font-family: var(--font-fraunces-stack);
+  font-size: 16px;
+  font-style: italic;
+  color: var(--ilun);
+  text-align: center;
+  max-width: 700px;
+  margin: 20px auto 0;
+  line-height: 1.5;
+}
+
+/* ============================================
+   PATUAK: editor + panel pendientes + reveal modal
+   ============================================ */
+.patuak-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.patuak-empty {
+  text-align: center;
+  color: var(--iluntze);
+  opacity: 0.55;
+  font-style: italic;
+  padding: 22px;
+}
+.patuak-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.22);
+  border-radius: 6px;
+}
+.patuak-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.patuak-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-family: var(--font-inter-stack);
+  font-size: 13.5px;
+  color: var(--ilun);
+  padding: 6px 4px;
+  min-width: 0;
+}
+.patuak-input:focus {
+  outline: none;
+  background: rgba(184, 138, 60, 0.05);
+  border-radius: 4px;
+}
+.patuak-delete {
+  background: transparent;
+  border: 1px solid rgba(194, 70, 23, 0.3);
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  color: var(--sugaar);
+  flex-shrink: 0;
+}
+.patuak-delete:hover:not(:disabled) {
+  background: rgba(194, 70, 23, 0.06);
+}
+.patuak-create {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(184, 138, 60, 0.25);
+}
+.patuak-create .patuak-input {
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.25);
+  border-radius: 5px;
+  padding: 8px 12px;
+}
+
+/* Pending deaths panel (panel principal del aula) */
+.patua-panel {
+  background: linear-gradient(135deg, rgba(194, 70, 23, 0.05), rgba(184, 138, 60, 0.08));
+  border: 1.5px solid rgba(194, 70, 23, 0.3);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 8px;
+  animation: patua-pulse 2.4s ease-in-out infinite;
+}
+@keyframes patua-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(194, 70, 23, 0); }
+  50% { box-shadow: 0 0 0 10px rgba(194, 70, 23, 0.06); }
+}
+.patua-panel-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.patua-panel-icon {
+  font-size: 36px;
+  flex-shrink: 0;
+  animation: dice-shake 3.6s ease-in-out infinite;
+}
+@keyframes dice-shake {
+  0%, 90%, 100% { transform: rotate(0); }
+  93% { transform: rotate(-12deg); }
+  96% { transform: rotate(12deg); }
+}
+.patua-panel-title {
+  font-family: var(--font-fraunces-stack);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--sugaar);
+  margin: 0 0 4px;
+}
+.patua-panel-hint {
+  font-size: 13px;
+  color: var(--iluntze);
+  margin: 0;
+  opacity: 0.85;
+}
+.patua-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+.patua-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border: 1px solid rgba(184, 138, 60, 0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.patua-item-avatar {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid rgba(184, 138, 60, 0.3);
+  flex-shrink: 0;
+}
+.patua-item-name {
+  flex: 1;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ilun);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.patua-execute-btn {
+  background: linear-gradient(135deg, var(--sugaar), #8E2B0F);
+  color: var(--argi);
+  border: none;
+  border-radius: 5px;
+  padding: 8px 14px;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.patua-execute-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.patua-execute-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal de revelación de patua */
+.patua-reveal-modal {
+  background: var(--argi);
+  border-radius: 12px;
+  max-width: 480px;
+  width: 92%;
+  padding: 36px 32px;
+  text-align: center;
+}
+.patua-reveal-dice {
+  font-size: 72px;
+  margin-bottom: 16px;
+  animation: patua-reveal-bounce 0.8s ease-out;
+}
+@keyframes patua-reveal-bounce {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  60% { transform: scale(1.2) rotate(20deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.patua-reveal-title {
+  font-family: var(--font-fraunces-stack);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--iluntze);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+.patua-reveal-text {
+  font-family: var(--font-fraunces-stack);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ilun);
+  margin: 0 0 28px;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* ============================================
+   RESPONSIVE: pasada general mobile
+   ============================================ */
+@media (max-width: 700px) {
+  /* Konfiguratu */
+  .konfiguratu-content { padding: 16px 14px; }
+  .konfiguratu-title { font-size: 22px; }
+  .konfiguratu-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .konfiguratu-sidebar {
+    position: relative;
+    top: auto;
+    padding: 6px;
+  }
+  .konfiguratu-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 4px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .konfiguratu-nav-link {
+    white-space: nowrap;
+    padding: 8px 10px;
+    font-size: 12.5px;
+  }
+  .konfiguratu-nav-label { font-size: 12.5px; }
+  .konfiguratu-main {
+    padding: 18px 14px;
+  }
+  .konfiguratu-section-title { font-size: 18px; }
+  .konfiguratu-section-hint { font-size: 12.5px; }
+
+  /* Klase editor */
+  .klase-editor-row { grid-template-columns: 1fr; }
+  .grant-day-btn { min-width: 56px; padding: 6px 8px; }
+  .grant-day-short { font-size: 13px; }
+  .grant-day-full { font-size: 9px; }
+
+  /* Tabla ikasleak */
+  .ikasleak-table { font-size: 11.5px; }
+  .ikasleak-table thead th,
+  .ikasleak-table tbody td { padding: 6px 8px; }
+  .ikasleak-mono { font-size: 10px; padding: 1px 4px; }
+  .ikasleak-class-select { font-size: 10.5px; padding: 3px 4px; }
+  .ikasleak-action-btn { width: 26px; height: 26px; font-size: 10px; }
+
+  /* Botereak tabla */
+  .botereak-table { font-size: 11.5px; }
+  .botereak-icon { font-size: 18px; width: 30px; }
+  .botereak-desc { font-size: 10px; }
+  .botereak-mana-input { width: 48px; font-size: 12px; }
+  .botereak-toggle { font-size: 10.5px; gap: 4px; }
+  .botereak-toggle input { width: 14px; height: 14px; }
+
+  /* Panel principal del aula */
+  .panel-content { padding: 16px 14px; }
+  .panel-title { font-size: 22px !important; }
+  .classroom-nav { grid-template-columns: 1fr; gap: 8px; }
+  .classroom-nav-link { padding: 12px 14px; }
+  .classroom-nav-icon { font-size: 22px; }
+
+  /* StudentsGrid */
+  .students-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: 10px; }
+  .student-card { padding: 10px; }
+  .student-card-avatar svg { width: 60px !important; height: 60px !important; }
+  .student-card-name { font-size: 13px; }
+  .student-card-quick { gap: 4px; }
+  .student-quick-btn { font-size: 10.5px; padding: 4px 6px; }
+  .team-group { padding: 12px; }
+  .team-group-title { font-size: 14px; }
+  .team-group-select { font-size: 10.5px; padding: 4px 8px; }
+
+  /* Modal detalle alumno */
+  .student-detail-modal {
+    max-width: calc(100vw - 16px);
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .student-detail-header {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+  .student-detail-avatar { width: 80px; }
+  .student-detail-avatar svg { width: 80px !important; height: 80px !important; }
+  .student-detail-name { font-size: 17px; }
+  .student-detail-tabs { padding: 0 12px; flex-wrap: wrap; }
+  .student-detail-tab { padding: 9px 12px; font-size: 12px; }
+  .student-detail-body { padding: 14px; }
+
+  /* Bulk bar */
+  .bulk-bar { padding: 10px; gap: 8px; }
+  .bulk-btn { font-size: 11.5px; padding: 6px 10px; }
+  .bulk-bar-expansion { max-height: 220px; }
+
+  /* Panel del alumno */
+  .student-shell { font-size: 14px; }
+  .student-header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+  .student-logo-text { font-size: 14px; }
+  .student-user { gap: 8px; }
+  .student-user-name { font-size: 12.5px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .student-main { padding: 14px; }
+  .student-classroom-banner { padding: 14px; }
+  .student-classroom-name { font-size: 18px; }
+  .student-grid { grid-template-columns: 1fr !important; gap: 12px; }
+
+  /* Hero card del alumno */
+  .hero-card { flex-direction: column; padding: 18px; gap: 14px; }
+  .hero-card-avatar svg { width: 120px !important; height: 120px !important; }
+  .hero-card-name { font-size: 18px; }
+
+  /* My team */
+  .my-team-section, .my-powers-section { padding: 16px; }
+  .my-team-member { gap: 8px; padding: 6px 8px; }
+  .my-team-avatar { width: 40px; height: 40px; }
+  .my-team-avatar svg { width: 40px !important; height: 40px !important; }
+  .my-team-member-name { font-size: 12.5px; }
+  .my-power-card { flex-wrap: wrap; padding: 8px 10px; }
+  .my-power-icon { font-size: 18px; width: 28px; }
+  .my-power-name { font-size: 12.5px; }
+  .my-power-desc { font-size: 10.5px; }
+  .my-power-use-btn { padding: 5px 10px; font-size: 11px; }
+
+  /* Patua panel */
+  .patua-panel { padding: 14px; }
+  .patua-panel-icon { font-size: 28px; }
+  .patua-panel-title { font-size: 15px; }
+  .patua-list { grid-template-columns: 1fr; }
+  .patua-item { gap: 8px; padding: 6px 10px; }
+  .patua-item-avatar { width: 40px; height: 40px; }
+  .patua-item-avatar svg { width: 40px !important; height: 40px !important; }
+  .patua-item-name { font-size: 13px; }
+  .patua-execute-btn { font-size: 11px; padding: 6px 10px; }
+
+  /* Reveal modal */
+  .patua-reveal-modal { padding: 24px 20px; }
+  .patua-reveal-dice { font-size: 56px; }
+  .patua-reveal-text { font-size: 17px; }
+
+  /* Avatar builder */
+  .avatar-builder-modal {
+    max-width: calc(100vw - 16px);
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .avatar-builder-body {
+    flex-direction: column !important;
+    padding: 14px !important;
+  }
+  .avatar-builder-preview-stage svg { width: 160px !important; height: 160px !important; }
+
+  /* Behaviors editor: una sola columna en mobile (ya estaba con media 900) */
+
+  /* TeamsManager */
+  .teams-create-bar { flex-direction: column; gap: 8px; }
+  .teams-grid { grid-template-columns: 1fr; }
+
+  /* How it works */
+  .how-section { padding: 48px 16px; }
+  .how-grid { grid-template-columns: 1fr; gap: 12px; }
+  .how-card { padding: 18px; }
+  .how-card-icon { font-size: 32px; }
+  .how-card-title { font-size: 17px; }
+  .how-card-desc { font-size: 12.5px; }
+
+  /* Hero landing */
+  .hero-content { padding: 20px; }
+  .hero h1 { font-size: 32px !important; line-height: 1.15; }
+  .hero-sub { font-size: 14px; }
+  .hero-ctas { flex-direction: column; gap: 10px; }
+  .hero-mark { display: none; }
+
+  /* TopBar */
+  .top-bar { padding: 10px 14px; }
+}
+
+/* Tabletas pequeñas */
+@media (min-width: 700px) and (max-width: 1024px) {
+  .konfiguratu-layout { grid-template-columns: 180px 1fr; }
+  .konfiguratu-nav-link { padding: 8px 10px; font-size: 13px; }
+  .ikasleak-table { font-size: 12.5px; }
+  .students-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; }
+}
+
+/* Tablas muy estrechas: scroll horizontal */
+.ikasleak-table-wrapper,
+.botereak-table-wrapper {
+  -webkit-overflow-scrolling: touch;
+}

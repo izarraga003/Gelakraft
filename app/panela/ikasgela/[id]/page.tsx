@@ -4,7 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { listBehaviors } from '@/lib/behaviors/actions'
 import { getStudentTeamMap } from '@/lib/teams/actions'
 import { countPendingRequests } from '@/lib/powers/actions'
+import { listPendingDeaths } from '@/lib/patuak/actions'
 import StudentsGrid from './StudentsGrid'
+import PendingDeathsPanel from './PendingDeathsPanel'
 import {
   FlameIcon,
   SilenceMoonIcon,
@@ -55,17 +57,19 @@ export default async function ClassroomDetailPage({
 
   const studentList = students ?? []
 
-  // Cargar behaviors, team_map y pending requests en paralelo
-  const [behaviorsResult, teamMap, pendingCount] = await Promise.all([
+  // Cargar behaviors, team_map, pending requests y pending deaths en paralelo
+  const [behaviorsResult, teamMap, pendingCount, pendingDeathsResult] = await Promise.all([
     listBehaviors(id),
     getStudentTeamMap(id),
     countPendingRequests(id),
+    listPendingDeaths(id),
   ])
   const behaviors = behaviorsResult.success ? behaviorsResult.behaviors : []
   const teamByStudent: Record<string, { teamId: string; teamName: string }> = {}
   teamMap.forEach((info, studentId) => {
     teamByStudent[studentId] = { teamId: info.teamId, teamName: info.teamName }
   })
+  const pendingDeaths = pendingDeathsResult.success ? pendingDeathsResult.students : []
 
   return (
     <div className="panel-content">
@@ -113,6 +117,14 @@ export default async function ClassroomDetailPage({
             </span>
           </Link>
         </section>
+      )}
+
+      {/* Patuak pendientes */}
+      {pendingDeaths.length > 0 && (
+        <PendingDeathsPanel
+          classroomId={id}
+          students={pendingDeaths}
+        />
       )}
 
       {/* ALUMNOS */}

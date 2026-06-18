@@ -12,6 +12,7 @@ import AvatarRender from '@/components/student/AvatarRender'
 import MyTeam from '@/components/student/MyTeam'
 import MyPowers from '@/components/student/MyPowers'
 import AmbientMusic from '@/components/audio/AmbientMusic'
+import EmojiRain from '@/components/fun/EmojiRain'
 
 export default async function StudentPanelPage() {
   const sessionStudent = await getStudent()
@@ -57,9 +58,11 @@ export default async function StudentPanelPage() {
           <span className="student-logo-text">GELAKRAFT</span>
         </Link>
         <div className="student-user">
-          <span className="student-user-avatar-mini" aria-hidden="true">
-            <AvatarRender config={safeAvatar} size={36} />
-          </span>
+          <EmojiRain emojis={['🌙', '✨', '⭐', '🐺', '🦉']} count={10}>
+            <span className="student-user-avatar-mini" aria-hidden="true">
+              <AvatarRender config={safeAvatar} size={36} />
+            </span>
+          </EmojiRain>
           <span className="student-user-name">{student.full_name}</span>
           <AmbientMusic />
           <form action="/ikasle/atera" method="POST">

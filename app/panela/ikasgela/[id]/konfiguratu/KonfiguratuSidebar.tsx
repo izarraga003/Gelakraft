@@ -9,6 +9,7 @@ const ITEMS: { slug: string; label: string; icon: string }[] = [
   { slug: 'sariak', label: 'Sariak', icon: '👍' },
   { slug: 'zigorrak', label: 'Zigorrak', icon: '⚠️' },
   { slug: 'botereak', label: 'Botereak', icon: '✨' },
+  { slug: 'patuak', label: 'Patuaren erronkak', icon: '🎲' },
   { slug: 'taldeak', label: 'Taldeak', icon: '👥' },
   { slug: 'gertaerak', label: 'Ustekabeko gertaerak', icon: '📜' },
 ]

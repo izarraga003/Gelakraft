@@ -1,17 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import TopBar from './TopBar'
+import EmojiRain from './fun/EmojiRain'
 import { ArrowRightIcon } from './icons'
 
 /**
  * Hero principal de la landing.
- * Composición:
- *  - Imagen de Mari como fondo (Next/Image con fill + priority)
- *  - Overlay gradiente para legibilidad
- *  - TopBar
- *  - Contenido textual a la izquierda (eyebrow, h1, sub, CTAs)
- *  - Marca vertical a la derecha (Anbotoko kobazulotik · 2026)
- *  - Scroll cue al fondo
  */
 export default function Hero() {
   return (
@@ -34,7 +28,11 @@ export default function Hero() {
         <div className="hero-inner">
           <div className="hero-eyebrow">Euskal mitologiazko ikasgela</div>
           <h1>
-            Bihurtu zure ikasgela <span className="accent">abentura epiko</span> batean.
+            Bihurtu zure ikasgela{' '}
+            <EmojiRain emojis={['🌙', '🔥', '⚡', '✨', '🐻']} count={18}>
+              <span className="accent">abentura epiko</span>
+            </EmojiRain>{' '}
+            batean.
           </h1>
           <p className="hero-sub">
             Euskal mitologia, gamifikazioa eta jolasa, dena ikasgelaren erdian. Mari zure gidari,
@@ -45,7 +43,7 @@ export default function Hero() {
               Izen-ematea
               <ArrowRightIcon />
             </Link>
-            <a href="#tresnak" className="btn-secondary">
+            <a href="#nola-dabilen" className="btn-secondary">
               Nola dabilen ikusi →
             </a>
           </div>
