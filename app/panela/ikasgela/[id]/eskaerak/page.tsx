@@ -36,9 +36,9 @@ export default async function RequestsPage({
           ← {classroom.name}
         </Link>
         <div className="panel-eyebrow">Eskaerak</div>
-        <h1 className="panel-title">Poder eskaerak</h1>
+        <h1 className="panel-title">Botere eskaerak</h1>
         <p className="panel-subtitle">
-          Ikasleek bidalitako poderak onartzeko edo ukatzeko. Onartzean,
+          Ikasleek bidalitako botereak onartzeko edo ukatzeko. Onartzean,
           klaseari aplikatu beharreko eragina (atsedena, egun gehiago, ezkutua,
           etab.) eskuz gauzatu beharko duzu.
         </p>

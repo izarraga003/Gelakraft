@@ -87,7 +87,7 @@ export default function MyPowers({
         if (teamMatesExcludingSelf.length === 0) {
           setMessage({
             kind: 'err',
-            text: 'Taldekiderik gabe ezin duzu poder hau erabili.',
+            text: 'Taldekiderik gabe ezin duzu botere hau erabili.',
           })
           return
         }
@@ -102,7 +102,7 @@ export default function MyPowers({
         ) {
           setMessage({
             kind: 'err',
-            text: 'Talde batean egon behar duzu poder hau erabiltzeko.',
+            text: 'Talde batean egon behar duzu botere hau erabiltzeko.',
           })
           return
         }
@@ -123,7 +123,7 @@ export default function MyPowers({
   return (
     <section className="my-powers-section">
       <header className="student-section-header">
-        <h2 className="student-section-title">Nire poderak</h2>
+        <h2 className="student-section-title">Nire botereak</h2>
         <span className="my-powers-mana">🔮 {mana} mana</span>
       </header>
 

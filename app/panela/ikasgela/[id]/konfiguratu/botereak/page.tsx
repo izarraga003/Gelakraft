@@ -30,10 +30,10 @@ export default async function BotereakPage({
       <header className="konfiguratu-section-header">
         <h2 className="konfiguratu-section-title">Botereak</h2>
         <p className="konfiguratu-section-hint">
-          Konfiguratu ikasleek erabili ditzaketen boterea. Markatu{' '}
-          <strong>Baieztapena behar du</strong> ikasleak eskaera bidaltzeko
-          eta zuk onartzeko. Bestela, boterea automatikoki aplikatuko da
-          ikasleak erabiltzean.
+          Konfiguratu ikasleek erabili ditzaketen botereak. Markatu{' '}
+          <strong>Baieztatu</strong> ikasleak eskaera bidali eta zuk onartu
+          behar izateko. Bestela, boterea automatikoki aplikatuko da ikasleak
+          erabiltzean.
         </p>
       </header>
 

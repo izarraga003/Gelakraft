@@ -99,7 +99,7 @@ export default function UstekabekoaSetup({
 
   function handleDelete(id: string, title: string) {
     const confirmed = window.confirm(
-      `Seguru "${title}" ezabatu nahi duzula?\n\nEkintza hau ezin da desegin.`
+      `Ziur "${title}" ezabatu nahi duzula?\n\nEkintza hau ezin da desegin.`
     )
     if (!confirmed) return
 

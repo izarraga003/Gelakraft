@@ -7519,3 +7519,53 @@ a {
   grid-template-columns: 1fr;
   max-width: 720px;
 }
+
+/* Grant days picker */
+.grant-days-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.grant-day-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.3);
+  border-radius: 6px;
+  padding: 8px 10px;
+  min-width: 72px;
+  cursor: pointer;
+  font-family: var(--font-inter-stack);
+  transition: all 0.15s;
+  color: var(--iluntze);
+}
+.grant-day-btn:hover:not(:disabled) {
+  border-color: var(--urrea);
+  background: rgba(184, 138, 60, 0.04);
+}
+.grant-day-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.grant-day-btn-on {
+  background: var(--ilun);
+  color: var(--argi);
+  border-color: var(--ilun);
+}
+.grant-day-btn-on:hover {
+  background: var(--ilun);
+  color: var(--argi);
+}
+.grant-day-short {
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  font-size: 15px;
+}
+.grant-day-full {
+  font-size: 10px;
+  opacity: 0.8;
+  letter-spacing: 0.02em;
+}

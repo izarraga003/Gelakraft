@@ -475,7 +475,7 @@ function StudentDetailModal({
             className={`student-detail-tab ${tab === 'powers' ? 'student-detail-tab-active' : ''}`}
             onClick={() => setTab('powers')}
           >
-            Poderak
+            Botereak
           </button>
         </nav>
 
@@ -574,7 +574,7 @@ function StudentDetailModal({
           {tab === 'powers' && (
             <div className="student-powers-tab">
               <p className="student-powers-note">
-                Ikasleak bere panelean erabiltzen ditu poderak. Hemen ikus
+                Ikasleak bere panelean erabiltzen ditu botereak. Hemen ikus
                 ditzakezu zein dauden desblokeatuta.
               </p>
               {unlockedPowers.length > 0 && (

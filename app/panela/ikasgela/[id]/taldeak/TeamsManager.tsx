@@ -107,56 +107,60 @@ export default function TeamsManager({
       setError(result.error ?? 'Errorea.')
       return
     }
-    // Reorganizar estado local
+
+    // Encontrar al alumno SINCRÓNICAMENTE antes de tocar el estado.
+    // Hacerlo dentro de los setters de React causaba un cierre asíncrono que
+    // dejaba `movedStudent = null` en la segunda actualización y el alumno
+    // desaparecía hasta refrescar.
     let movedStudent: SimpleStudent | null = null
+    for (const t of teams) {
+      const found = t.members.find((m) => m.id === studentId)
+      if (found) {
+        movedStudent = {
+          id: found.id,
+          full_name: found.full_name,
+          hero_class: found.hero_class,
+          avatar_config: found.avatar_config,
+          xp: found.xp,
+        }
+        break
+      }
+    }
+    if (!movedStudent) {
+      const idx = unassigned.findIndex((s) => s.id === studentId)
+      if (idx >= 0) movedStudent = unassigned[idx]
+    }
+    if (!movedStudent) return // no debería pasar
+
+    const ms = movedStudent
 
     // Quitar de donde estuviera
     setTeams((prev) =>
-      prev.map((t) => {
-        const found = t.members.find((m) => m.id === studentId)
-        if (found) {
-          movedStudent = {
-            id: found.id,
-            full_name: found.full_name,
-            hero_class: found.hero_class,
-            avatar_config: found.avatar_config,
-            xp: found.xp,
-          }
-          return { ...t, members: t.members.filter((m) => m.id !== studentId) }
-        }
-        return t
-      })
+      prev.map((t) => ({
+        ...t,
+        members: t.members.filter((m) => m.id !== studentId),
+      }))
     )
-    setUnassigned((prev) => {
-      const idx = prev.findIndex((s) => s.id === studentId)
-      if (idx >= 0) {
-        movedStudent = prev[idx]
-        return prev.filter((s) => s.id !== studentId)
-      }
-      return prev
-    })
+    setUnassigned((prev) => prev.filter((s) => s.id !== studentId))
 
     // Insertarlo donde toque
-    if (movedStudent !== null) {
-      const ms = movedStudent as SimpleStudent
-      if (targetTeamId === null) {
-        setUnassigned((prev) =>
-          [...prev, ms].sort((a, b) => a.full_name.localeCompare(b.full_name))
+    if (targetTeamId === null) {
+      setUnassigned((prev) =>
+        [...prev, ms].sort((a, b) => a.full_name.localeCompare(b.full_name))
+      )
+    } else {
+      setTeams((prev) =>
+        prev.map((t) =>
+          t.id === targetTeamId
+            ? {
+                ...t,
+                members: [...t.members, ms].sort((a, b) =>
+                  a.full_name.localeCompare(b.full_name)
+                ),
+              }
+            : t
         )
-      } else {
-        setTeams((prev) =>
-          prev.map((t) =>
-            t.id === targetTeamId
-              ? {
-                  ...t,
-                  members: [...t.members, ms].sort((a, b) =>
-                    a.full_name.localeCompare(b.full_name)
-                  ),
-                }
-              : t
-          )
-        )
-      }
+      )
     }
   }
 

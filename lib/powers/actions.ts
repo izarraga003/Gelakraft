@@ -42,7 +42,7 @@ export async function studentInvokePower(
   if (!session) return { success: false, error: 'Saioa galdu da.' }
 
   const power = findPowerById(powerId)
-  if (!power) return { success: false, error: 'Poderea ez da aurkitu.' }
+  if (!power) return { success: false, error: 'Boterea ez da aurkitu.' }
 
   const supabase = await createClient()
 

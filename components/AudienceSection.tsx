@@ -13,7 +13,7 @@ const stages: Audience[] = [
   },
   {
     level: 'DBH',
-    desc: 'Talde-dinamikak, erronka koop­eratiboak eta lehiaketak. Ikasleek beren rol-klasea aukeratzen dute eta abentura sortzen da.',
+    desc: 'Talde-dinamikak, erronka kooperatiboak eta lehiaketak. Ikasleek beren rol-klasea aukeratzen dute eta abentura sortzen da.',
   },
   {
     level: 'Batxilergoa',

@@ -9,6 +9,7 @@ export type ClassroomSettings = {
   name: string
   weekly_mana: number
   weekly_hearts: number
+  grant_days: number[]
 }
 
 export async function getClassroomSettings(
@@ -17,10 +18,14 @@ export async function getClassroomSettings(
   const supabase = await createClient()
   const { data } = await supabase
     .from('classrooms')
-    .select('id, name, weekly_mana, weekly_hearts')
+    .select('id, name, weekly_mana, weekly_hearts, grant_days')
     .eq('id', classroomId)
     .single()
-  return (data as ClassroomSettings | null) ?? null
+  if (!data) return null
+  return {
+    ...(data as ClassroomSettings),
+    grant_days: (data as ClassroomSettings).grant_days ?? [1, 2, 3, 4, 5],
+  }
 }
 
 export async function updateClassroomSettings(input: {
@@ -28,6 +33,7 @@ export async function updateClassroomSettings(input: {
   name: string
   weeklyMana: number
   weeklyHearts: number
+  grantDays: number[]
 }): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('update_classroom_settings', {
@@ -35,6 +41,7 @@ export async function updateClassroomSettings(input: {
     p_name: input.name,
     p_weekly_mana: input.weeklyMana,
     p_weekly_hearts: input.weeklyHearts,
+    p_grant_days: input.grantDays,
   })
   if (error) return { success: false, error: error.message }
   const r = data as { success: boolean; error?: string }

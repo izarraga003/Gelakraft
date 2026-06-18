@@ -53,7 +53,7 @@ export default function RequestsManager({
       <div className="panel-empty-state">
         <p>Ez dago eskaera zain.</p>
         <p className="panel-empty-hint">
-          Ikasleek poderak erabiltzean hemen agertuko zaizkizu onartzeko.
+          Ikasleek botereak erabiltzean hemen agertuko zaizkizu onartzeko.
         </p>
       </div>
     )

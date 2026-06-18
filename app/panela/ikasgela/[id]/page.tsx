@@ -104,12 +104,12 @@ export default async function ClassroomDetailPage({
             <span className="classroom-nav-icon">✨</span>
             <span>
               <strong>
-                Poder eskaerak
+                Botere eskaerak
                 {pendingCount > 0 && (
                   <span className="classroom-nav-badge">{pendingCount}</span>
                 )}
               </strong>
-              <small>Ikasleen poderak onartu edo ukatu</small>
+              <small>Ikasleen botereak onartu edo ukatu</small>
             </span>
           </Link>
         </section>

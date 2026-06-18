@@ -25,7 +25,7 @@ const ACTIVITY_LABELS: Record<Activity['activity_type'], string> = {
   event: 'Ustekabeko gertaera',
   reward: 'Saria',
   adjustment: 'Irakaslearen doiketa',
-  power_used: 'Poderea erabilita',
+  power_used: 'Boterea erabilita',
 }
 
 const ACTIVITY_ICONS: Record<Activity['activity_type'], string> = {
