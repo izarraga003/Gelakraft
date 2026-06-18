@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { findPowerById } from './catalog'
 
-export async function usePower(
+export async function activatePower(
   studentId: string,
   powerId: string
 ): Promise<{ success: boolean; error?: string }> {

@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo } from 'react'
 import { regeneratePassword, deleteStudent } from '@/lib/students/actions'
 import { adjustStudents } from '@/lib/students/adjust-actions'
-import { usePower } from '@/lib/powers/actions'
+import { activatePower } from '@/lib/powers/actions'
 import {
   HERO_CLASS_LABELS,
   type HeroClass,
@@ -125,7 +125,7 @@ export default function StudentsGrid({
 
   async function handleUsePower(studentId: string, power: Power) {
     setBusy(true)
-    const result = await usePower(studentId, power.id)
+    const result = await activatePower(studentId, power.id)
     setBusy(false)
     if (!result.success) {
       alert(`Errorea: ${result.error}`)
