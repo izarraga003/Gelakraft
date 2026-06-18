@@ -46,23 +46,31 @@ export async function studentInvokePower(
 
   const supabase = await createClient()
 
-  // Lookup classroom_id y overrides
-  const { data: student } = await supabase
-    .from('students')
-    .select('classroom_id')
-    .eq('id', session.studentId)
-    .single()
-  if (!student) return { success: false, error: 'Ikaslea ez da aurkitu.' }
+  // Resolver classroom_id y overrides con RPC SECURITY DEFINER
+  // (el alumno usa iron-session, no Supabase auth, así que un SELECT
+  // directo a `students`/`power_overrides` se bloquea por RLS).
+  const { data: lookupData, error: lookupError } = await supabase.rpc(
+    'get_power_effective',
+    {
+      p_student_id: session.studentId,
+      p_power_id: powerId,
+    }
+  )
+  if (lookupError) {
+    return { success: false, error: lookupError.message }
+  }
+  const lookup = lookupData as {
+    found: boolean
+    classroom_id?: string
+    override_mode?: 'auto' | 'manual' | null
+    override_mana_cost?: number | null
+  }
+  if (!lookup?.found) {
+    return { success: false, error: 'Ikaslea ez da aurkitu.' }
+  }
 
-  const { data: override } = await supabase
-    .from('power_overrides')
-    .select('mode, mana_cost')
-    .eq('classroom_id', student.classroom_id)
-    .eq('power_id', powerId)
-    .maybeSingle()
-
-  const effectiveMode = (override?.mode ?? power.mode) as 'auto' | 'manual'
-  const effectiveCost = override?.mana_cost ?? power.manaCost
+  const effectiveMode = (lookup.override_mode ?? power.mode) as 'auto' | 'manual'
+  const effectiveCost = lookup.override_mana_cost ?? power.manaCost
 
   if (effectiveMode === 'auto' && power.mode === 'auto') {
     const requiresTarget = power.requiresTarget
