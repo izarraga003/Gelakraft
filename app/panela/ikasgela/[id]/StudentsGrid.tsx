@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import {
-  regeneratePassword,
-  deleteStudent,
-} from '@/lib/students/actions'
+import { useState, useTransition, useMemo } from 'react'
+import { regeneratePassword, deleteStudent } from '@/lib/students/actions'
 import { adjustStudents } from '@/lib/students/adjust-actions'
+import { usePower } from '@/lib/powers/actions'
 import {
   HERO_CLASS_LABELS,
   type HeroClass,
@@ -13,6 +11,8 @@ import {
 import { xpToLevel } from '@/lib/students/level'
 import { sanitizeAvatarConfig, type AvatarConfig } from '@/lib/students/avatar'
 import AvatarRender from '@/components/student/AvatarRender'
+import { getPowersForClass, type Power } from '@/lib/powers/catalog'
+import type { Behavior } from '@/lib/behaviors/actions'
 
 type Student = {
   id: string
@@ -29,20 +29,38 @@ type Student = {
   created_at: string
 }
 
+type StudentTeamInfo = {
+  teamId: string
+  teamName: string
+}
+
 type Props = {
   students: Student[]
   classroomId: string
+  behaviors: Behavior[]
+  teamByStudent: Record<string, StudentTeamInfo>
 }
 
 export default function StudentsGrid({
   students: initial,
   classroomId,
+  behaviors,
+  teamByStudent,
 }: Props) {
   const [students, setStudents] = useState<Student[]>(initial)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [, startTransition] = useTransition()
   const [busy, setBusy] = useState(false)
   const [openStudent, setOpenStudent] = useState<Student | null>(null)
+
+  const positives = useMemo(
+    () => behaviors.filter((b) => b.behavior_type === 'positive'),
+    [behaviors]
+  )
+  const negatives = useMemo(
+    () => behaviors.filter((b) => b.behavior_type === 'negative'),
+    [behaviors]
+  )
 
   const allSelected = students.length > 0 && selected.size === students.length
 
@@ -70,6 +88,8 @@ export default function StudentsGrid({
     heartsDelta: number,
     note?: string
   ) {
+    if (xpDelta === 0 && heartsDelta === 0) return
+
     setBusy(true)
     const result = await adjustStudents(classroomId, studentIds, xpDelta, heartsDelta, note)
     setBusy(false)
@@ -79,7 +99,6 @@ export default function StudentsGrid({
       return
     }
 
-    // Aplicar a estado local para feedback inmediato
     setStudents((prev) =>
       prev.map((s) => {
         if (!studentIds.includes(s.id)) return s
@@ -91,7 +110,6 @@ export default function StudentsGrid({
       })
     )
 
-    // También en la card abierta si la hay
     if (openStudent && studentIds.includes(openStudent.id)) {
       setOpenStudent((prev) =>
         prev
@@ -105,16 +123,38 @@ export default function StudentsGrid({
     }
   }
 
-  async function handleRegenerate(id: string) {
-    const confirmed = window.confirm(
-      'Pasahitz berri bat sortu?\n\nIkasleak ezin izango du sartu pasahitz zaharrarekin.'
+  async function handleUsePower(studentId: string, power: Power) {
+    setBusy(true)
+    const result = await usePower(studentId, power.id)
+    setBusy(false)
+    if (!result.success) {
+      alert(`Errorea: ${result.error}`)
+      return
+    }
+    setStudents((prev) =>
+      prev.map((s) =>
+        s.id === studentId
+          ? { ...s, mana: Math.max(0, s.mana - power.manaCost) }
+          : s
+      )
     )
-    if (!confirmed) return
+    if (openStudent?.id === studentId) {
+      setOpenStudent((prev) =>
+        prev ? { ...prev, mana: Math.max(0, prev.mana - power.manaCost) } : prev
+      )
+    }
+  }
 
+  async function handleRegenerate(id: string) {
+    if (
+      !window.confirm(
+        'Pasahitz berri bat sortu?\n\nIkasleak ezin izango du sartu pasahitz zaharrarekin.'
+      )
+    )
+      return
     setBusy(true)
     const result = await regeneratePassword(id)
     setBusy(false)
-
     if (result.success) {
       setStudents((prev) =>
         prev.map((s) =>
@@ -136,7 +176,7 @@ export default function StudentsGrid({
     if (!s) return
     if (
       !window.confirm(
-        `Seguru ${s.full_name} ezabatu nahi duzula?\n\nEkintza hau ezin da desegin.`
+        `Ziur ${s.full_name} ezabatu nahi duzula?\n\nEkintza hau ezin da desegin.`
       )
     )
       return
@@ -179,6 +219,7 @@ export default function StudentsGrid({
           const level = xpToLevel(s.xp)
           const safeAvatar = sanitizeAvatarConfig(s.avatar_config, 99)
           const isSelected = selected.has(s.id)
+          const teamInfo = teamByStudent[s.id]
           return (
             <article
               key={s.id}
@@ -207,6 +248,9 @@ export default function StudentsGrid({
                   <span className={`student-hero-class hero-${s.hero_class}`}>
                     {HERO_CLASS_LABELS[s.hero_class]}
                   </span>
+                  {teamInfo && (
+                    <span className="student-card-team">{teamInfo.teamName}</span>
+                  )}
                 </div>
               </button>
 
@@ -221,6 +265,12 @@ export default function StudentsGrid({
                     {s.hearts}<span className="student-card-stat-max">/{s.max_hearts}</span>
                   </span>
                 </span>
+                <span className="student-card-stat" title="Mana">
+                  <span className="student-card-stat-icon">🔮</span>
+                  <span className="student-card-stat-value">
+                    {s.mana}<span className="student-card-stat-max">/{s.max_mana}</span>
+                  </span>
+                </span>
               </div>
 
               <div className="student-card-quick">
@@ -229,7 +279,6 @@ export default function StudentsGrid({
                   className="student-quick-btn student-quick-positive"
                   onClick={() => applyAdjustment([s.id], 10, 0)}
                   disabled={busy}
-                  title="+10 XP"
                 >
                   +10 XP
                 </button>
@@ -238,7 +287,6 @@ export default function StudentsGrid({
                   className="student-quick-btn student-quick-negative"
                   onClick={() => applyAdjustment([s.id], 0, -1)}
                   disabled={busy || s.hearts <= 0}
-                  title="-1 bihotz"
                 >
                   -1 ♥
                 </button>
@@ -248,29 +296,35 @@ export default function StudentsGrid({
         })}
       </div>
 
-      {/* Modal detalle alumno */}
       {openStudent && (
         <StudentDetailModal
           student={openStudent}
+          team={teamByStudent[openStudent.id] ?? null}
+          positives={positives}
+          negatives={negatives}
+          busy={busy}
           onClose={() => setOpenStudent(null)}
-          onAdjust={(xp, hearts) => applyAdjustment([openStudent.id], xp, hearts)}
+          onAdjust={(xp, hearts, note) =>
+            applyAdjustment([openStudent.id], xp, hearts, note)
+          }
+          onUsePower={(power) => handleUsePower(openStudent.id, power)}
           onRegeneratePassword={() => handleRegenerate(openStudent.id)}
           onDelete={() => handleDelete(openStudent.id)}
-          busy={busy}
         />
       )}
 
-      {/* Barra de bulk actions cuando hay seleccionados */}
       {selected.size > 0 && (
         <BulkActionsBar
           count={selected.size}
           busy={busy}
+          positives={positives}
+          negatives={negatives}
           onClear={clearSelection}
-          onAdjust={(xp, hearts) =>
-            applyAdjustment(Array.from(selected), xp, hearts).then(() => {
-              if (xp !== 0 || hearts !== 0) clearSelection()
+          onAdjust={(xp, hearts, note) => {
+            applyAdjustment(Array.from(selected), xp, hearts, note).then(() => {
+              clearSelection()
             })
-          }
+          }}
         />
       )}
     </>
@@ -283,21 +337,38 @@ export default function StudentsGrid({
 
 function StudentDetailModal({
   student,
+  team,
+  positives,
+  negatives,
+  busy,
   onClose,
   onAdjust,
+  onUsePower,
   onRegeneratePassword,
   onDelete,
-  busy,
 }: {
   student: Student
+  team: StudentTeamInfo | null
+  positives: Behavior[]
+  negatives: Behavior[]
+  busy: boolean
   onClose: () => void
-  onAdjust: (xpDelta: number, heartsDelta: number) => void
+  onAdjust: (xpDelta: number, heartsDelta: number, note?: string) => void
+  onUsePower: (power: Power) => void
   onRegeneratePassword: () => void
   onDelete: () => void
-  busy: boolean
 }) {
   const level = xpToLevel(student.xp)
   const safeAvatar = sanitizeAvatarConfig(student.avatar_config, 99)
+  const [tab, setTab] = useState<'adjust' | 'behaviors' | 'powers'>('adjust')
+
+  // Custom amounts
+  const [customXp, setCustomXp] = useState<number>(10)
+  const [customHearts, setCustomHearts] = useState<number>(-1)
+
+  const powers = getPowersForClass(student.hero_class)
+  const unlockedPowers = powers.filter((p) => p.levelRequired <= level)
+  const lockedPowers = powers.filter((p) => p.levelRequired > level)
 
   return (
     <div
@@ -320,6 +391,14 @@ function StudentDetailModal({
                 {HERO_CLASS_LABELS[student.hero_class]}
               </span>
               <span className="student-detail-level">Maila {level}</span>
+              {team && (
+                <span className="student-detail-team">· {team.teamName}</span>
+              )}
+            </div>
+            <div className="student-detail-meta-stats">
+              <span>⚡ {student.xp} XP</span>
+              <span>❤️ {student.hearts}/{student.max_hearts}</span>
+              <span>🔮 {student.mana}/{student.max_mana}</span>
             </div>
             <div className="student-detail-credentials">
               <div>
@@ -342,25 +421,193 @@ function StudentDetailModal({
           </button>
         </header>
 
-        <div className="student-detail-stats">
-          <StatControl
-            label="Esperientzia"
-            icon="⚡"
-            value={student.xp}
-            onAdjust={(delta) => onAdjust(delta, 0)}
-            presets={[5, 10, 20, 50, -10]}
-            busy={busy}
-          />
-          <StatControl
-            label="Bihotzak"
-            icon="❤️"
-            value={student.hearts}
-            max={student.max_hearts}
-            onAdjust={(delta) => onAdjust(0, delta)}
-            presets={[1, -1, -2]}
-            busy={busy}
-            isHearts
-          />
+        <nav className="student-detail-tabs">
+          <button
+            type="button"
+            className={`student-detail-tab ${tab === 'adjust' ? 'student-detail-tab-active' : ''}`}
+            onClick={() => setTab('adjust')}
+          >
+            Doitu
+          </button>
+          <button
+            type="button"
+            className={`student-detail-tab ${tab === 'behaviors' ? 'student-detail-tab-active' : ''}`}
+            onClick={() => setTab('behaviors')}
+          >
+            Jokabideak
+          </button>
+          <button
+            type="button"
+            className={`student-detail-tab ${tab === 'powers' ? 'student-detail-tab-active' : ''}`}
+            onClick={() => setTab('powers')}
+          >
+            Poderak
+          </button>
+        </nav>
+
+        <div className="student-detail-body">
+          {tab === 'adjust' && (
+            <div className="student-adjust-tab">
+              <CustomAdjustControl
+                label="Esperientzia"
+                icon="⚡"
+                value={customXp}
+                onChange={setCustomXp}
+                onApply={() => onAdjust(customXp, 0)}
+                presets={[5, 10, 20, 50, 100, -10]}
+                busy={busy}
+              />
+              <CustomAdjustControl
+                label="Bihotzak"
+                icon="❤️"
+                value={customHearts}
+                onChange={setCustomHearts}
+                onApply={() => onAdjust(0, customHearts)}
+                presets={[1, -1, -2, -3, -5]}
+                busy={busy}
+              />
+            </div>
+          )}
+
+          {tab === 'behaviors' && (
+            <div className="student-behaviors-tab">
+              {positives.length > 0 && (
+                <section className="student-behaviors-section">
+                  <h3 className="student-behaviors-title">
+                    <span>👍</span> Sariak
+                  </h3>
+                  <ul className="student-behaviors-list">
+                    {positives.map((b) => (
+                      <li key={b.id}>
+                        <button
+                          type="button"
+                          className="behavior-apply-btn behavior-apply-positive"
+                          onClick={() =>
+                            onAdjust(b.xp_delta, b.hearts_delta, b.description)
+                          }
+                          disabled={busy}
+                        >
+                          <span className="behavior-apply-desc">{b.description}</span>
+                          <span className="behavior-apply-deltas">
+                            {b.xp_delta !== 0 && (
+                              <span>+{b.xp_delta} XP</span>
+                            )}
+                            {b.hearts_delta !== 0 && (
+                              <span>{b.hearts_delta > 0 ? '+' : ''}{b.hearts_delta} ♥</span>
+                            )}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {negatives.length > 0 && (
+                <section className="student-behaviors-section">
+                  <h3 className="student-behaviors-title">
+                    <span>⚠️</span> Abisuak
+                  </h3>
+                  <ul className="student-behaviors-list">
+                    {negatives.map((b) => (
+                      <li key={b.id}>
+                        <button
+                          type="button"
+                          className="behavior-apply-btn behavior-apply-negative"
+                          onClick={() =>
+                            onAdjust(b.xp_delta, b.hearts_delta, b.description)
+                          }
+                          disabled={busy || (student.hearts === 0 && b.hearts_delta < 0)}
+                        >
+                          <span className="behavior-apply-desc">{b.description}</span>
+                          <span className="behavior-apply-deltas">
+                            {b.xp_delta !== 0 && (
+                              <span>{b.xp_delta > 0 ? '+' : ''}{b.xp_delta} XP</span>
+                            )}
+                            {b.hearts_delta !== 0 && (
+                              <span>{b.hearts_delta > 0 ? '+' : ''}{b.hearts_delta} ♥</span>
+                            )}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
+          )}
+
+          {tab === 'powers' && (
+            <div className="student-powers-tab">
+              {unlockedPowers.length === 0 && (
+                <p className="student-powers-empty">
+                  Oraindik ez du poderik desblokeatu. Mailari igon behar du
+                  poderak erabiltzeko.
+                </p>
+              )}
+              {unlockedPowers.length > 0 && (
+                <section className="student-powers-section">
+                  <h3 className="student-powers-title">Desblokeatuak</h3>
+                  <ul className="student-powers-list">
+                    {unlockedPowers.map((p) => (
+                      <li key={p.id} className="student-power-item">
+                        <span className="student-power-icon" aria-hidden="true">
+                          {p.icon}
+                        </span>
+                        <div className="student-power-info">
+                          <span className="student-power-name">
+                            {p.name}
+                            {p.collaborative && (
+                              <span className="student-power-collab" title="Kolaboratiboa">
+                                {' '}· talde
+                              </span>
+                            )}
+                          </span>
+                          <span className="student-power-desc">{p.description}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="student-power-use"
+                          onClick={() => onUsePower(p)}
+                          disabled={busy || student.mana < p.manaCost}
+                          title={
+                            student.mana < p.manaCost
+                              ? `Mana ${p.manaCost} behar da`
+                              : 'Erabili'
+                          }
+                        >
+                          <span>🔮 {p.manaCost}</span>
+                          <span>Erabili</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {lockedPowers.length > 0 && (
+                <section className="student-powers-section student-powers-locked">
+                  <h3 className="student-powers-title">Blokeatuak</h3>
+                  <ul className="student-powers-list">
+                    {lockedPowers.map((p) => (
+                      <li key={p.id} className="student-power-item student-power-item-locked">
+                        <span className="student-power-icon" aria-hidden="true">
+                          {p.icon}
+                        </span>
+                        <div className="student-power-info">
+                          <span className="student-power-name">{p.name}</span>
+                          <span className="student-power-desc">{p.description}</span>
+                        </div>
+                        <span className="student-power-locked-label">
+                          🔒 Mla {p.levelRequired}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
+          )}
         </div>
 
         <footer className="student-detail-footer">
@@ -378,7 +625,7 @@ function StudentDetailModal({
             onClick={onDelete}
             disabled={busy}
           >
-            Ikaslea ezabatu
+            Ezabatu
           </button>
           <div className="student-detail-footer-spacer" />
           <button
@@ -395,53 +642,62 @@ function StudentDetailModal({
   )
 }
 
-function StatControl({
+function CustomAdjustControl({
   label,
   icon,
   value,
-  max,
-  onAdjust,
+  onChange,
+  onApply,
   presets,
   busy,
-  isHearts = false,
 }: {
   label: string
   icon: string
   value: number
-  max?: number
-  onAdjust: (delta: number) => void
+  onChange: (v: number) => void
+  onApply: () => void
   presets: number[]
   busy: boolean
-  isHearts?: boolean
 }) {
   return (
     <div className="stat-control">
       <div className="stat-control-header">
         <span className="stat-control-icon">{icon}</span>
         <span className="stat-control-label">{label}</span>
-        <span className="stat-control-value">
-          {value}
-          {max !== undefined && (
-            <span className="stat-control-max"> / {max}</span>
-          )}
-        </span>
+      </div>
+      <div className="stat-control-custom">
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => {
+            const n = parseInt(e.target.value, 10)
+            onChange(isNaN(n) ? 0 : n)
+          }}
+          className="stat-control-input"
+          aria-label={`${label} kopurua`}
+        />
+        <button
+          type="button"
+          className="stat-control-apply"
+          onClick={onApply}
+          disabled={busy || value === 0}
+        >
+          Aplikatu
+        </button>
       </div>
       <div className="stat-control-buttons">
-        {presets.map((p) => {
-          const isNeg = p < 0
-          return (
-            <button
-              key={p}
-              type="button"
-              className={`stat-preset-btn ${isNeg ? 'stat-preset-negative' : 'stat-preset-positive'}`}
-              onClick={() => onAdjust(p)}
-              disabled={busy || (isHearts && p < 0 && value === 0)}
-            >
-              {p > 0 ? '+' : ''}
-              {p}
-            </button>
-          )
-        })}
+        {presets.map((p) => (
+          <button
+            key={p}
+            type="button"
+            className={`stat-preset-btn ${p < 0 ? 'stat-preset-negative' : 'stat-preset-positive'}`}
+            onClick={() => onChange(p)}
+            disabled={busy}
+          >
+            {p > 0 ? '+' : ''}
+            {p}
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -454,63 +710,62 @@ function StatControl({
 function BulkActionsBar({
   count,
   busy,
+  positives,
+  negatives,
   onClear,
   onAdjust,
 }: {
   count: number
   busy: boolean
+  positives: Behavior[]
+  negatives: Behavior[]
   onClear: () => void
-  onAdjust: (xpDelta: number, heartsDelta: number) => void
+  onAdjust: (xpDelta: number, heartsDelta: number, note?: string) => void
 }) {
+  const [expanded, setExpanded] = useState<'none' | 'positive' | 'negative' | 'custom'>('none')
+  const [customXp, setCustomXp] = useState(10)
+  const [customHearts, setCustomHearts] = useState(0)
+
   return (
     <div className="bulk-bar" role="region" aria-label="Talde-akzioak">
       <div className="bulk-bar-info">
         <span className="bulk-bar-count">{count}</span>
         <span>ikasle aukeratuta</span>
       </div>
+
       <div className="bulk-bar-actions">
         <button
           type="button"
-          className="bulk-btn bulk-btn-positive"
-          onClick={() => onAdjust(10, 0)}
+          className={`bulk-btn bulk-btn-positive ${expanded === 'positive' ? 'bulk-btn-active' : ''}`}
+          onClick={() =>
+            setExpanded(expanded === 'positive' ? 'none' : 'positive')
+          }
           disabled={busy}
         >
-          + 10 XP
+          👍 Saritu
         </button>
         <button
           type="button"
-          className="bulk-btn bulk-btn-positive"
-          onClick={() => onAdjust(20, 0)}
+          className={`bulk-btn bulk-btn-negative ${expanded === 'negative' ? 'bulk-btn-active' : ''}`}
+          onClick={() =>
+            setExpanded(expanded === 'negative' ? 'none' : 'negative')
+          }
           disabled={busy}
         >
-          + 20 XP
+          ⚠️ Abisua
         </button>
         <button
           type="button"
-          className="bulk-btn bulk-btn-positive"
-          onClick={() => onAdjust(50, 0)}
+          className={`bulk-btn bulk-btn-neutral ${expanded === 'custom' ? 'bulk-btn-active' : ''}`}
+          onClick={() =>
+            setExpanded(expanded === 'custom' ? 'none' : 'custom')
+          }
           disabled={busy}
         >
-          + 50 XP
-        </button>
-        <span className="bulk-bar-sep" aria-hidden="true">|</span>
-        <button
-          type="button"
-          className="bulk-btn bulk-btn-negative"
-          onClick={() => onAdjust(0, -1)}
-          disabled={busy}
-        >
-          - 1 ♥
-        </button>
-        <button
-          type="button"
-          className="bulk-btn bulk-btn-negative"
-          onClick={() => onAdjust(0, -2)}
-          disabled={busy}
-        >
-          - 2 ♥
+          ✏️ Pertsonalizatu
         </button>
       </div>
+
       <button
         type="button"
         className="bulk-bar-clear"
@@ -519,6 +774,120 @@ function BulkActionsBar({
       >
         ✕
       </button>
+
+      {expanded !== 'none' && (
+        <div className="bulk-bar-expansion">
+          {expanded === 'positive' && (
+            <ul className="bulk-behavior-list">
+              {positives.length === 0 ? (
+                <li className="bulk-behavior-empty">
+                  Ez dago jokabide positiborik konfiguratuta.
+                </li>
+              ) : (
+                positives.map((b) => (
+                  <li key={b.id}>
+                    <button
+                      type="button"
+                      className="bulk-behavior-btn bulk-behavior-positive"
+                      onClick={() => {
+                        onAdjust(b.xp_delta, b.hearts_delta, b.description)
+                      }}
+                      disabled={busy}
+                    >
+                      <span>{b.description}</span>
+                      <span className="bulk-behavior-deltas">
+                        {b.xp_delta !== 0 && <span>+{b.xp_delta} XP</span>}
+                        {b.hearts_delta !== 0 && (
+                          <span>
+                            {b.hearts_delta > 0 ? '+' : ''}
+                            {b.hearts_delta} ♥
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+
+          {expanded === 'negative' && (
+            <ul className="bulk-behavior-list">
+              {negatives.length === 0 ? (
+                <li className="bulk-behavior-empty">
+                  Ez dago abisurik konfiguratuta.
+                </li>
+              ) : (
+                negatives.map((b) => (
+                  <li key={b.id}>
+                    <button
+                      type="button"
+                      className="bulk-behavior-btn bulk-behavior-negative"
+                      onClick={() => {
+                        onAdjust(b.xp_delta, b.hearts_delta, b.description)
+                      }}
+                      disabled={busy}
+                    >
+                      <span>{b.description}</span>
+                      <span className="bulk-behavior-deltas">
+                        {b.xp_delta !== 0 && (
+                          <span>
+                            {b.xp_delta > 0 ? '+' : ''}
+                            {b.xp_delta} XP
+                          </span>
+                        )}
+                        {b.hearts_delta !== 0 && (
+                          <span>
+                            {b.hearts_delta > 0 ? '+' : ''}
+                            {b.hearts_delta} ♥
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+
+          {expanded === 'custom' && (
+            <div className="bulk-custom">
+              <label className="bulk-custom-field">
+                <span>XP</span>
+                <input
+                  type="number"
+                  value={customXp}
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10)
+                    setCustomXp(isNaN(n) ? 0 : n)
+                  }}
+                  className="bulk-custom-input"
+                />
+              </label>
+              <label className="bulk-custom-field">
+                <span>♥</span>
+                <input
+                  type="number"
+                  value={customHearts}
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10)
+                    setCustomHearts(isNaN(n) ? 0 : n)
+                  }}
+                  className="bulk-custom-input"
+                />
+              </label>
+              <button
+                type="button"
+                className="bulk-custom-apply"
+                onClick={() => onAdjust(customXp, customHearts)}
+                disabled={busy || (customXp === 0 && customHearts === 0)}
+              >
+                Aplikatu
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -3,11 +3,14 @@ import Link from 'next/link'
 import { getStudent } from '@/lib/students/session'
 import { loadStudentDashboard } from '@/lib/students/dashboard'
 import { sanitizeAvatarConfig } from '@/lib/students/avatar'
+import { xpToLevel } from '@/lib/students/level'
 import { MoonIcon } from '@/components/icons'
 import HeroCard from '@/components/student/HeroCard'
 import ClassroomRanking from '@/components/student/ClassroomRanking'
 import ActivityLog from '@/components/student/ActivityLog'
 import AvatarRender from '@/components/student/AvatarRender'
+import MyTeam from '@/components/student/MyTeam'
+import MyPowers from '@/components/student/MyPowers'
 import AmbientMusic from '@/components/audio/AmbientMusic'
 
 export default async function StudentPanelPage() {
@@ -40,8 +43,9 @@ export default async function StudentPanelPage() {
     )
   }
 
-  const { student, classroom, ranking, position, activities } = data
+  const { student, classroom, ranking, position, team, activities } = data
   const safeAvatar = sanitizeAvatarConfig(student.avatar_config, 99)
+  const level = xpToLevel(student.xp)
 
   return (
     <div className="student-shell">
@@ -89,6 +93,15 @@ export default async function StudentPanelPage() {
             position={position}
           />
           <ActivityLog activities={activities} />
+        </div>
+
+        <div className="student-grid">
+          <MyTeam team={team} currentStudentId={student.id} />
+          <MyPowers
+            heroClass={student.hero_class}
+            level={level}
+            mana={student.mana}
+          />
         </div>
       </main>
     </div>

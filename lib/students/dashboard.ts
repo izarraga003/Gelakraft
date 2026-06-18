@@ -8,7 +8,7 @@ export type StudentDashboardData = {
     classroom_id: string
     full_name: string
     username: string
-    avatar: string // legacy emoji
+    avatar: string
     avatar_config: AvatarConfig
     hero_class: HeroClass
     xp: number
@@ -36,9 +36,27 @@ export type StudentDashboardData = {
     max_hearts: number
   }[]
   position: number
+  team: {
+    id: string
+    name: string
+    position: number
+    members: {
+      id: string
+      full_name: string
+      hero_class: HeroClass
+      avatar_config: AvatarConfig
+      xp: number
+    }[]
+  } | null
+  power_usages: {
+    id: string
+    power_id: string
+    mana_cost: number
+    used_at: string
+  }[]
   activities: {
     id: string
-    activity_type: 'battle' | 'silence' | 'event' | 'reward' | 'adjustment'
+    activity_type: 'battle' | 'silence' | 'event' | 'reward' | 'adjustment' | 'power_used'
     outcome: 'victory' | 'defeat' | 'success' | 'failure' | 'neutral'
     xp_delta: number
     hearts_delta: number

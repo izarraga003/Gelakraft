@@ -1,6 +1,8 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { listBehaviors } from '@/lib/behaviors/actions'
+import { getStudentTeamMap } from '@/lib/teams/actions'
 import StudentsGrid from './StudentsGrid'
 import {
   FlameIcon,
@@ -33,19 +35,14 @@ export default async function ClassroomDetailPage({
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/saioa-hasi')
-  }
+  if (!user) redirect('/saioa-hasi')
 
   const { data: classroom } = await supabase
     .from('classrooms')
     .select('id, name, stage, created_at')
     .eq('id', id)
     .single()
-
-  if (!classroom) {
-    notFound()
-  }
+  if (!classroom) notFound()
 
   const { data: students } = await supabase
     .from('students')
@@ -56,6 +53,17 @@ export default async function ClassroomDetailPage({
     .order('full_name', { ascending: true })
 
   const studentList = students ?? []
+
+  // Cargar behaviors y team_map en paralelo
+  const [behaviorsResult, teamMap] = await Promise.all([
+    listBehaviors(id),
+    getStudentTeamMap(id),
+  ])
+  const behaviors = behaviorsResult.success ? behaviorsResult.behaviors : []
+  const teamByStudent: Record<string, { teamId: string; teamName: string }> = {}
+  teamMap.forEach((info, studentId) => {
+    teamByStudent[studentId] = { teamId: info.teamId, teamName: info.teamName }
+  })
 
   return (
     <div className="panel-content">
@@ -72,7 +80,27 @@ export default async function ClassroomDetailPage({
         </p>
       </section>
 
-      {/* SECCIÓN 1: ALUMNOS (ARRIBA) */}
+      {/* Navegación rápida a sub-páginas */}
+      {studentList.length > 0 && (
+        <section className="classroom-nav">
+          <Link href={`/panela/ikasgela/${id}/jokabideak`} className="classroom-nav-link">
+            <span className="classroom-nav-icon">📋</span>
+            <span>
+              <strong>Jokabideak</strong>
+              <small>Sariak eta abisuak konfiguratu</small>
+            </span>
+          </Link>
+          <Link href={`/panela/ikasgela/${id}/taldeak`} className="classroom-nav-link">
+            <span className="classroom-nav-icon">👥</span>
+            <span>
+              <strong>Taldeak</strong>
+              <small>Taldeak automatikoki sortu</small>
+            </span>
+          </Link>
+        </section>
+      )}
+
+      {/* ALUMNOS */}
       <section className="panel-section">
         <div className="panel-section-header">
           <h2 className="panel-section-title">Ikasleak</h2>
@@ -92,11 +120,16 @@ export default async function ClassroomDetailPage({
             </p>
           </div>
         ) : (
-          <StudentsGrid students={studentList} classroomId={id} />
+          <StudentsGrid
+            students={studentList}
+            classroomId={id}
+            behaviors={behaviors}
+            teamByStudent={teamByStudent}
+          />
         )}
       </section>
 
-      {/* SECCIÓN 2: HERRAMIENTAS (DEBAJO) */}
+      {/* HERRAMIENTAS */}
       {studentList.length > 0 && (
         <section className="panel-section">
           <div className="panel-section-header">
@@ -115,7 +148,7 @@ export default async function ClassroomDetailPage({
               icon={<SilenceMoonIcon size={36} />}
               roman="II"
               name="Mariren isiltasun-erronka"
-              desc="Klasea isilik mantendu Mari ez esnatzeko. Zarata-maila neurtzen da."
+              desc="Klasea isilik mantendu Mari ez esnatzeko."
             />
             <ToolCard
               href={`/panela/ikasgela/${id}/ustekabekoa`}
@@ -129,21 +162,21 @@ export default async function ClassroomDetailPage({
               icon={<HourglassIcon size={36} />}
               roman="IV"
               name="Atzerako kontaketa"
-              desc="Denbora-mugarekin aritzeko cuenta atrás bisuala."
+              desc="Denbora-mugarekin aritzeko."
             />
             <ToolCard
               href={`/panela/ikasgela/${id}/kronometroa`}
               icon={<StopwatchIcon size={36} />}
               roman="V"
               name="Kronometroa"
-              desc="Ariketen denbora neurtu, markak markatu."
+              desc="Ariketen denbora neurtu eta markak markatu."
             />
             <ToolCard
               href={`/panela/ikasgela/${id}/hautatzailea`}
               icon={<D20Icon size={36} />}
               roman="VI"
               name="Ausazko hautatzailea"
-              desc="Ikasle bat ausaz aukeratzeko sistema."
+              desc="Ikasle bat ausaz aukeratu."
             />
           </div>
         </section>
@@ -151,8 +184,8 @@ export default async function ClassroomDetailPage({
 
       <section className="panel-meta">
         <p>
-          Ikasleek beren erabiltzaile-izena eta pasahitzarekin sartuko dira{' '}
-          <strong>gelakraft.eus/ikasle/sartu</strong> helbidean.
+          Ikasleek <strong>gelakraft.eus/ikasle/sartu</strong> helbidean sartu
+          behar dute.
         </p>
       </section>
     </div>

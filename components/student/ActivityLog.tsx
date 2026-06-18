@@ -5,7 +5,7 @@ import { relativeTimeEu } from '@/lib/utils/relative-time'
 
 type Activity = {
   id: string
-  activity_type: 'battle' | 'silence' | 'event' | 'reward' | 'adjustment'
+  activity_type: 'battle' | 'silence' | 'event' | 'reward' | 'adjustment' | 'power_used'
   outcome: 'victory' | 'defeat' | 'success' | 'failure' | 'neutral'
   xp_delta: number
   hearts_delta: number
@@ -25,6 +25,7 @@ const ACTIVITY_LABELS: Record<Activity['activity_type'], string> = {
   event: 'Ustekabeko gertaera',
   reward: 'Saria',
   adjustment: 'Irakaslearen doiketa',
+  power_used: 'Poderea erabilita',
 }
 
 const ACTIVITY_ICONS: Record<Activity['activity_type'], string> = {
@@ -33,6 +34,7 @@ const ACTIVITY_ICONS: Record<Activity['activity_type'], string> = {
   event: '📜',
   reward: '🎁',
   adjustment: '✋',
+  power_used: '✨',
 }
 
 const OUTCOME_LABELS: Record<Activity['outcome'], string> = {
@@ -100,6 +102,10 @@ export default function ActivityLog({ activities }: Props) {
           {filtered.map((a) => {
             const isPositive = a.outcome === 'victory' || a.outcome === 'success'
             const isNegative = a.outcome === 'defeat' || a.outcome === 'failure'
+            const note =
+              (a.metadata?.note as string | undefined) ||
+              (a.metadata?.power_name as string | undefined) ||
+              null
             return (
               <li
                 key={a.id}
@@ -116,7 +122,7 @@ export default function ActivityLog({ activities }: Props) {
                 </span>
                 <div className="activity-info">
                   <span className="activity-title">
-                    {ACTIVITY_LABELS[a.activity_type]}
+                    {note || ACTIVITY_LABELS[a.activity_type]}
                     <span
                       className={`activity-scope ${
                         a.is_personal ? 'activity-scope-personal' : 'activity-scope-class'
@@ -126,7 +132,7 @@ export default function ActivityLog({ activities }: Props) {
                     </span>
                   </span>
                   <span className="activity-outcome">
-                    {OUTCOME_LABELS[a.outcome]}
+                    {note ? ACTIVITY_LABELS[a.activity_type] : OUTCOME_LABELS[a.outcome]}
                     <span className="activity-time">
                       {' · '}
                       {relativeTimeEu(a.created_at)}
