@@ -85,18 +85,16 @@ export default async function ClassroomDetailPage({
       {/* Navegación rápida a sub-páginas */}
       {studentList.length > 0 && (
         <section className="classroom-nav">
-          <Link href={`/panela/ikasgela/${id}/jokabideak`} className="classroom-nav-link">
-            <span className="classroom-nav-icon">📋</span>
+          <Link
+            href={`/panela/ikasgela/${id}/konfiguratu`}
+            className="classroom-nav-link"
+          >
+            <span className="classroom-nav-icon">⚙️</span>
             <span>
-              <strong>Jokabideak</strong>
-              <small>Sariak eta abisuak konfiguratu</small>
-            </span>
-          </Link>
-          <Link href={`/panela/ikasgela/${id}/taldeak`} className="classroom-nav-link">
-            <span className="classroom-nav-icon">👥</span>
-            <span>
-              <strong>Taldeak</strong>
-              <small>Ikasleak taldeka antolatu</small>
+              <strong>Klasea konfiguratu</strong>
+              <small>
+                Ikasleak, sariak, zigorrak, botereak, taldeak, gertaerak…
+              </small>
             </span>
           </Link>
           <Link

@@ -11,9 +11,14 @@ import {
 type Props = {
   classroomId: string
   initial: Behavior[]
+  filter?: 'positive' | 'negative' | 'both'
 }
 
-export default function BehaviorsEditor({ classroomId, initial }: Props) {
+export default function BehaviorsEditor({
+  classroomId,
+  initial,
+  filter = 'both',
+}: Props) {
   const [behaviors, setBehaviors] = useState<Behavior[]>(initial)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -88,8 +93,9 @@ export default function BehaviorsEditor({ classroomId, initial }: Props) {
         </div>
       )}
 
-      <div className="behaviors-columns">
+      <div className={`behaviors-columns behaviors-columns-${filter}`}>
         {/* POSITIVAS */}
+        {filter !== 'negative' && (
         <section className="behaviors-column behaviors-column-positive">
           <header className="behaviors-column-header">
             <h2 className="behaviors-column-title">
@@ -151,8 +157,10 @@ export default function BehaviorsEditor({ classroomId, initial }: Props) {
             </button>
           </div>
         </section>
+        )}
 
         {/* NEGATIVAS */}
+        {filter !== 'positive' && (
         <section className="behaviors-column behaviors-column-negative">
           <header className="behaviors-column-header">
             <h2 className="behaviors-column-title">
@@ -214,6 +222,7 @@ export default function BehaviorsEditor({ classroomId, initial }: Props) {
             </button>
           </div>
         </section>
+        )}
       </div>
     </>
   )

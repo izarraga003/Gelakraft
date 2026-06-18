@@ -31,6 +31,8 @@ export type PowerRequestWithStudents = PowerRequest & {
  * El alumno invoca un poder desde su panel. Según el tipo:
  *   - auto: aplica efecto en BD al instante (descuenta mana).
  *   - manual: crea request pendiente (reserva el mana descontándolo).
+ *
+ * Se aplican los overrides del classroom (modo + coste) si existen.
  */
 export async function studentInvokePower(
   powerId: string,
@@ -44,7 +46,25 @@ export async function studentInvokePower(
 
   const supabase = await createClient()
 
-  if (power.mode === 'auto') {
+  // Lookup classroom_id y overrides
+  const { data: student } = await supabase
+    .from('students')
+    .select('classroom_id')
+    .eq('id', session.studentId)
+    .single()
+  if (!student) return { success: false, error: 'Ikaslea ez da aurkitu.' }
+
+  const { data: override } = await supabase
+    .from('power_overrides')
+    .select('mode, mana_cost')
+    .eq('classroom_id', student.classroom_id)
+    .eq('power_id', powerId)
+    .maybeSingle()
+
+  const effectiveMode = (override?.mode ?? power.mode) as 'auto' | 'manual'
+  const effectiveCost = override?.mana_cost ?? power.manaCost
+
+  if (effectiveMode === 'auto' && power.mode === 'auto') {
     const requiresTarget = power.requiresTarget
     if (requiresTarget && !targetStudentId) {
       return { success: false, error: 'Helburua aukeratu behar duzu.' }
@@ -53,7 +73,7 @@ export async function studentInvokePower(
       p_student_id: session.studentId,
       p_power_id: power.id,
       p_power_name: power.name,
-      p_mana_cost: power.manaCost,
+      p_mana_cost: effectiveCost,
       p_effect_type: power.effect,
       p_effect_value: power.effectValue,
       p_target_student_id: targetStudentId ?? null,
@@ -65,12 +85,12 @@ export async function studentInvokePower(
     return { success: true, pending: false }
   }
 
-  // manual → request
+  // manual (o auto pero override a manual): request
   const { data, error } = await supabase.rpc('request_power', {
     p_student_id: session.studentId,
     p_power_id: power.id,
     p_power_name: power.name,
-    p_mana_cost: power.manaCost,
+    p_mana_cost: effectiveCost,
     p_target_student_id: targetStudentId ?? null,
   })
   if (error) return { success: false, error: error.message }
