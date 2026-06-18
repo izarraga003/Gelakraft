@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { listBehaviors } from '@/lib/behaviors/actions'
 import { getStudentTeamMap } from '@/lib/teams/actions'
+import { countPendingRequests } from '@/lib/powers/actions'
 import StudentsGrid from './StudentsGrid'
 import {
   FlameIcon,
@@ -54,10 +55,11 @@ export default async function ClassroomDetailPage({
 
   const studentList = students ?? []
 
-  // Cargar behaviors y team_map en paralelo
-  const [behaviorsResult, teamMap] = await Promise.all([
+  // Cargar behaviors, team_map y pending requests en paralelo
+  const [behaviorsResult, teamMap, pendingCount] = await Promise.all([
     listBehaviors(id),
     getStudentTeamMap(id),
+    countPendingRequests(id),
   ])
   const behaviors = behaviorsResult.success ? behaviorsResult.behaviors : []
   const teamByStudent: Record<string, { teamId: string; teamName: string }> = {}
@@ -94,7 +96,22 @@ export default async function ClassroomDetailPage({
             <span className="classroom-nav-icon">👥</span>
             <span>
               <strong>Taldeak</strong>
-              <small>Taldeak automatikoki sortu</small>
+              <small>Ikasleak taldeka antolatu</small>
+            </span>
+          </Link>
+          <Link
+            href={`/panela/ikasgela/${id}/eskaerak`}
+            className={`classroom-nav-link ${pendingCount > 0 ? 'classroom-nav-link-attention' : ''}`}
+          >
+            <span className="classroom-nav-icon">✨</span>
+            <span>
+              <strong>
+                Poder eskaerak
+                {pendingCount > 0 && (
+                  <span className="classroom-nav-badge">{pendingCount}</span>
+                )}
+              </strong>
+              <small>Ikasleen poderak onartu edo ukatu</small>
             </span>
           </Link>
         </section>

@@ -26,22 +26,27 @@ export default async function TeamsPage({
     .single()
   if (!classroom) notFound()
 
-  // Contar alumnos por hero_class para mostrar al profesor si puede generar
-  const { data: counts } = await supabase
+  const { data: studentsRaw } = await supabase
     .from('students')
-    .select('hero_class')
+    .select('id, full_name, hero_class, avatar_config, xp')
     .eq('classroom_id', id)
+    .order('full_name', { ascending: true })
 
-  const byClass = { sorgina: 0, lamia: 0, jentila: 0 }
-  for (const c of counts ?? []) {
-    if (c.hero_class === 'sorgina') byClass.sorgina += 1
-    else if (c.hero_class === 'lamia') byClass.lamia += 1
-    else if (c.hero_class === 'jentila') byClass.jentila += 1
-  }
-  const maxTeams = Math.min(byClass.sorgina, byClass.lamia, byClass.jentila)
+  const allStudents = (studentsRaw ?? []) as Array<{
+    id: string
+    full_name: string
+    hero_class: 'sorgina' | 'lamia' | 'jentila'
+    avatar_config: Record<string, unknown>
+    xp: number
+  }>
 
   const result = await listTeams(id)
   const initialTeams = result.success ? result.teams : []
+
+  // Calcular los alumnos sin equipo
+  const assignedIds = new Set<string>()
+  initialTeams.forEach((t) => t.members.forEach((m) => assignedIds.add(m.id)))
+  const unassigned = allStudents.filter((s) => !assignedIds.has(s.id))
 
   return (
     <div className="panel-content">
@@ -52,16 +57,15 @@ export default async function TeamsPage({
         <div className="panel-eyebrow">Taldeak</div>
         <h1 className="panel-title">Taldeak antolatu</h1>
         <p className="panel-subtitle">
-          Taldeak automatikoki sortzen dira: talde bakoitzak gutxienez sorgina,
-          lamia eta jentila bana izango du.
+          Taldeak eskuz sortu eta ikasleak banatu. Talde berriko izena hautatu
+          eta ikasleak goitibeherako menutik mugitu.
         </p>
       </section>
 
       <TeamsManager
         classroomId={id}
         initialTeams={initialTeams}
-        countsByClass={byClass}
-        maxTeams={maxTeams}
+        initialUnassigned={unassigned}
       />
     </div>
   )

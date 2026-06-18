@@ -37,30 +37,73 @@ async function assertOwnership(classroomId: string): Promise<string | null> {
   return null
 }
 
-export async function generateTeams(
-  classroomId: string
-): Promise<{ success: boolean; error?: string; numTeams?: number }> {
+// ============================================================
+// CRUD MANUAL DE EQUIPOS
+// ============================================================
+
+export async function createTeam(
+  classroomId: string,
+  name: string
+): Promise<{ success: boolean; error?: string; team?: Team }> {
   const err = await assertOwnership(classroomId)
   if (err) return { success: false, error: err }
+  if (!name.trim()) return { success: false, error: 'Izena ezin da hutsik egon.' }
 
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('generate_teams', {
-    p_classroom_id: classroomId,
-  })
 
-  if (error) return { success: false, error: error.message }
+  // Calcular siguiente position
+  const { data: existing } = await supabase
+    .from('teams')
+    .select('position')
+    .eq('classroom_id', classroomId)
+    .order('position', { ascending: false })
+    .limit(1)
 
-  const result = data as { success: boolean; error?: string; num_teams?: number }
-  if (!result.success) {
-    return { success: false, error: result.error ?? 'Errorea.' }
-  }
+  const nextPos = (existing?.[0]?.position ?? 0) + 1
+
+  const { data, error } = await supabase
+    .from('teams')
+    .insert({
+      classroom_id: classroomId,
+      name: name.trim(),
+      position: nextPos,
+    })
+    .select('id, name, position')
+    .single()
+
+  if (error || !data) return { success: false, error: error?.message ?? 'Errorea.' }
 
   revalidatePath(`/panela/ikasgela/${classroomId}`)
   revalidatePath(`/panela/ikasgela/${classroomId}/taldeak`)
-  return { success: true, numTeams: result.num_teams }
+  return {
+    success: true,
+    team: { id: data.id, name: data.name, position: data.position, members: [] },
+  }
 }
 
-export async function deleteAllTeams(
+export async function renameTeam(
+  teamId: string,
+  classroomId: string,
+  newName: string
+): Promise<{ success: boolean; error?: string }> {
+  const err = await assertOwnership(classroomId)
+  if (err) return { success: false, error: err }
+  if (!newName.trim()) return { success: false, error: 'Izena ezin da hutsik egon.' }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('teams')
+    .update({ name: newName.trim() })
+    .eq('id', teamId)
+    .eq('classroom_id', classroomId)
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath(`/panela/ikasgela/${classroomId}/taldeak`)
+  return { success: true }
+}
+
+export async function deleteTeam(
+  teamId: string,
   classroomId: string
 ): Promise<{ success: boolean; error?: string }> {
   const err = await assertOwnership(classroomId)
@@ -70,14 +113,47 @@ export async function deleteAllTeams(
   const { error } = await supabase
     .from('teams')
     .delete()
+    .eq('id', teamId)
     .eq('classroom_id', classroomId)
 
   if (error) return { success: false, error: error.message }
+  revalidatePath(`/panela/ikasgela/${classroomId}`)
+  revalidatePath(`/panela/ikasgela/${classroomId}/taldeak`)
+  return { success: true }
+}
+
+/**
+ * Mueve un alumno a un equipo (o lo quita si teamId == null).
+ * Si ya estaba en otro equipo, lo cambia.
+ */
+export async function assignStudentToTeam(
+  studentId: string,
+  teamId: string | null,
+  classroomId: string
+): Promise<{ success: boolean; error?: string }> {
+  const err = await assertOwnership(classroomId)
+  if (err) return { success: false, error: err }
+
+  const supabase = await createClient()
+
+  // Borrar membresía anterior (la unique constraint sobre student_id lo exige)
+  await supabase.from('team_members').delete().eq('student_id', studentId)
+
+  if (teamId !== null) {
+    const { error } = await supabase
+      .from('team_members')
+      .insert({ team_id: teamId, student_id: studentId })
+    if (error) return { success: false, error: error.message }
+  }
 
   revalidatePath(`/panela/ikasgela/${classroomId}`)
   revalidatePath(`/panela/ikasgela/${classroomId}/taldeak`)
   return { success: true }
 }
+
+// ============================================================
+// LECTURA
+// ============================================================
 
 export async function listTeams(
   classroomId: string
@@ -129,7 +205,7 @@ export async function listTeams(
     name: t.name,
     position: t.position,
     members: (byTeam.get(t.id) ?? []).sort((a, b) =>
-      a.hero_class < b.hero_class ? -1 : a.hero_class > b.hero_class ? 1 : a.full_name.localeCompare(b.full_name)
+      a.full_name.localeCompare(b.full_name)
     ),
   }))
 
@@ -137,7 +213,7 @@ export async function listTeams(
 }
 
 /**
- * Helper para obtener qué team_id tiene un alumno (o null si ninguno).
+ * Devuelve, para cada alumno del classroom, en qué team_id está (si lo está).
  */
 export async function getStudentTeamMap(
   classroomId: string

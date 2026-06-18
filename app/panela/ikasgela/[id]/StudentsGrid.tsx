@@ -3,7 +3,6 @@
 import { useState, useTransition, useMemo } from 'react'
 import { regeneratePassword, deleteStudent } from '@/lib/students/actions'
 import { adjustStudents } from '@/lib/students/adjust-actions'
-import { activatePower } from '@/lib/powers/actions'
 import {
   HERO_CLASS_LABELS,
   type HeroClass,
@@ -11,7 +10,7 @@ import {
 import { xpToLevel } from '@/lib/students/level'
 import { sanitizeAvatarConfig, type AvatarConfig } from '@/lib/students/avatar'
 import AvatarRender from '@/components/student/AvatarRender'
-import { getPowersForClass, type Power } from '@/lib/powers/catalog'
+import { getPowersForClass } from '@/lib/powers/catalog'
 import type { Behavior } from '@/lib/behaviors/actions'
 
 type Student = {
@@ -62,6 +61,36 @@ export default function StudentsGrid({
     [behaviors]
   )
 
+  // Agrupar alumnos por equipo
+  const groupedByTeam = useMemo(() => {
+    const groups = new Map<string, { teamName: string; teamId: string | null; students: Student[] }>()
+    // "Sin equipo" siempre primero (key especial '')
+    groups.set('', { teamName: 'Talderik gabe', teamId: null, students: [] })
+
+    for (const s of students) {
+      const info = teamByStudent[s.id]
+      const key = info?.teamId ?? ''
+      if (!groups.has(key)) {
+        groups.set(key, {
+          teamName: info!.teamName,
+          teamId: info!.teamId,
+          students: [],
+        })
+      }
+      groups.get(key)!.students.push(s)
+    }
+
+    // Si "sin equipo" está vacío, lo quitamos
+    if (groups.get('')!.students.length === 0) groups.delete('')
+
+    return Array.from(groups.values()).sort((a, b) => {
+      // sin equipo al final, los demás por nombre
+      if (a.teamId === null) return 1
+      if (b.teamId === null) return -1
+      return a.teamName.localeCompare(b.teamName)
+    })
+  }, [students, teamByStudent])
+
   const allSelected = students.length > 0 && selected.size === students.length
 
   function toggleSelect(id: string) {
@@ -76,6 +105,19 @@ export default function StudentsGrid({
   function toggleAll() {
     if (allSelected) setSelected(new Set())
     else setSelected(new Set(students.map((s) => s.id)))
+  }
+
+  function selectGroup(studentIds: string[]) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      const allInGroup = studentIds.every((id) => next.has(id))
+      if (allInGroup) {
+        studentIds.forEach((id) => next.delete(id))
+      } else {
+        studentIds.forEach((id) => next.add(id))
+      }
+      return next
+    })
   }
 
   function clearSelection() {
@@ -119,28 +161,6 @@ export default function StudentsGrid({
               hearts: Math.max(0, Math.min(prev.max_hearts, prev.hearts + heartsDelta)),
             }
           : prev
-      )
-    }
-  }
-
-  async function handleUsePower(studentId: string, power: Power) {
-    setBusy(true)
-    const result = await activatePower(studentId, power.id)
-    setBusy(false)
-    if (!result.success) {
-      alert(`Errorea: ${result.error}`)
-      return
-    }
-    setStudents((prev) =>
-      prev.map((s) =>
-        s.id === studentId
-          ? { ...s, mana: Math.max(0, s.mana - power.manaCost) }
-          : s
-      )
-    )
-    if (openStudent?.id === studentId) {
-      setOpenStudent((prev) =>
-        prev ? { ...prev, mana: Math.max(0, prev.mana - power.manaCost) } : prev
       )
     }
   }
@@ -214,86 +234,104 @@ export default function StudentsGrid({
         </span>
       </div>
 
-      <div className="students-grid">
-        {students.map((s) => {
-          const level = xpToLevel(s.xp)
-          const safeAvatar = sanitizeAvatarConfig(s.avatar_config, 99)
-          const isSelected = selected.has(s.id)
-          const teamInfo = teamByStudent[s.id]
-          return (
-            <article
-              key={s.id}
-              className={`student-card ${isSelected ? 'student-card-selected' : ''}`}
-            >
-              <label className="student-card-select">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleSelect(s.id)}
-                  aria-label={`Aukeratu ${s.full_name}`}
-                />
-              </label>
-
+      <div className="students-by-team">
+        {groupedByTeam.map((group) => (
+          <section key={group.teamId ?? 'none'} className="team-group">
+            <header className="team-group-header">
+              <h3 className="team-group-title">
+                <span className="team-group-name">{group.teamName}</span>
+                <span className="team-group-count">{group.students.length}</span>
+              </h3>
               <button
                 type="button"
-                className="student-card-body"
-                onClick={() => setOpenStudent(s)}
+                className="team-group-select"
+                onClick={() => selectGroup(group.students.map((s) => s.id))}
               >
-                <div className="student-card-avatar">
-                  <AvatarRender config={safeAvatar} size={86} />
-                  <span className="student-card-level">Mla {level}</span>
-                </div>
-                <div className="student-card-info">
-                  <span className="student-card-name">{s.full_name}</span>
-                  <span className={`student-hero-class hero-${s.hero_class}`}>
-                    {HERO_CLASS_LABELS[s.hero_class]}
-                  </span>
-                  {teamInfo && (
-                    <span className="student-card-team">{teamInfo.teamName}</span>
-                  )}
-                </div>
+                {group.students.every((s) => selected.has(s.id))
+                  ? '✕ Kendu denak'
+                  : '+ Aukeratu denak'}
               </button>
+            </header>
 
-              <div className="student-card-stats">
-                <span className="student-card-stat" title="XP">
-                  <span className="student-card-stat-icon">⚡</span>
-                  <span className="student-card-stat-value">{s.xp}</span>
-                </span>
-                <span className="student-card-stat" title="Bihotzak">
-                  <span className="student-card-stat-icon">❤️</span>
-                  <span className="student-card-stat-value">
-                    {s.hearts}<span className="student-card-stat-max">/{s.max_hearts}</span>
-                  </span>
-                </span>
-                <span className="student-card-stat" title="Mana">
-                  <span className="student-card-stat-icon">🔮</span>
-                  <span className="student-card-stat-value">
-                    {s.mana}<span className="student-card-stat-max">/{s.max_mana}</span>
-                  </span>
-                </span>
-              </div>
+            <div className="students-grid">
+              {group.students.map((s) => {
+                const level = xpToLevel(s.xp)
+                const safeAvatar = sanitizeAvatarConfig(s.avatar_config, 99)
+                const isSelected = selected.has(s.id)
+                return (
+                  <article
+                    key={s.id}
+                    className={`student-card ${isSelected ? 'student-card-selected' : ''}`}
+                  >
+                    <label className="student-card-select">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(s.id)}
+                        aria-label={`Aukeratu ${s.full_name}`}
+                      />
+                    </label>
 
-              <div className="student-card-quick">
-                <button
-                  type="button"
-                  className="student-quick-btn student-quick-positive"
-                  onClick={() => applyAdjustment([s.id], 10, 0)}
-                  disabled={busy}
-                >
-                  +10 XP
-                </button>
-                <button
-                  type="button"
-                  className="student-quick-btn student-quick-negative"
-                  onClick={() => applyAdjustment([s.id], 0, -1)}
-                  disabled={busy || s.hearts <= 0}
-                >
-                  -1 ♥
-                </button>
-              </div>
-            </article>
-          )
-        })}
+                    <button
+                      type="button"
+                      className="student-card-body"
+                      onClick={() => setOpenStudent(s)}
+                    >
+                      <div className="student-card-avatar">
+                        <AvatarRender config={safeAvatar} size={86} />
+                        <span className="student-card-level">Mla {level}</span>
+                      </div>
+                      <div className="student-card-info">
+                        <span className="student-card-name">{s.full_name}</span>
+                        <span className={`student-hero-class hero-${s.hero_class}`}>
+                          {HERO_CLASS_LABELS[s.hero_class]}
+                        </span>
+                      </div>
+                    </button>
+
+                    <div className="student-card-stats">
+                      <span className="student-card-stat" title="XP">
+                        <span className="student-card-stat-icon">⚡</span>
+                        <span className="student-card-stat-value">{s.xp}</span>
+                      </span>
+                      <span className="student-card-stat" title="Bihotzak">
+                        <span className="student-card-stat-icon">❤️</span>
+                        <span className="student-card-stat-value">
+                          {s.hearts}<span className="student-card-stat-max">/{s.max_hearts}</span>
+                        </span>
+                      </span>
+                      <span className="student-card-stat" title="Mana">
+                        <span className="student-card-stat-icon">🔮</span>
+                        <span className="student-card-stat-value">
+                          {s.mana}<span className="student-card-stat-max">/{s.max_mana}</span>
+                        </span>
+                      </span>
+                    </div>
+
+                    <div className="student-card-quick">
+                      <button
+                        type="button"
+                        className="student-quick-btn student-quick-positive"
+                        onClick={() => applyAdjustment([s.id], 10, 0)}
+                        disabled={busy}
+                      >
+                        +10 XP
+                      </button>
+                      <button
+                        type="button"
+                        className="student-quick-btn student-quick-negative"
+                        onClick={() => applyAdjustment([s.id], 0, -1)}
+                        disabled={busy || s.hearts <= 0}
+                      >
+                        -1 ♥
+                      </button>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </section>
+        ))}
       </div>
 
       {openStudent && (
@@ -307,7 +345,6 @@ export default function StudentsGrid({
           onAdjust={(xp, hearts, note) =>
             applyAdjustment([openStudent.id], xp, hearts, note)
           }
-          onUsePower={(power) => handleUsePower(openStudent.id, power)}
           onRegeneratePassword={() => handleRegenerate(openStudent.id)}
           onDelete={() => handleDelete(openStudent.id)}
         />
@@ -343,7 +380,6 @@ function StudentDetailModal({
   busy,
   onClose,
   onAdjust,
-  onUsePower,
   onRegeneratePassword,
   onDelete,
 }: {
@@ -354,7 +390,6 @@ function StudentDetailModal({
   busy: boolean
   onClose: () => void
   onAdjust: (xpDelta: number, heartsDelta: number, note?: string) => void
-  onUsePower: (power: Power) => void
   onRegeneratePassword: () => void
   onDelete: () => void
 }) {
@@ -362,7 +397,6 @@ function StudentDetailModal({
   const safeAvatar = sanitizeAvatarConfig(student.avatar_config, 99)
   const [tab, setTab] = useState<'adjust' | 'behaviors' | 'powers'>('adjust')
 
-  // Custom amounts
   const [customXp, setCustomXp] = useState<number>(10)
   const [customHearts, setCustomHearts] = useState<number>(-1)
 
@@ -539,12 +573,10 @@ function StudentDetailModal({
 
           {tab === 'powers' && (
             <div className="student-powers-tab">
-              {unlockedPowers.length === 0 && (
-                <p className="student-powers-empty">
-                  Oraindik ez du poderik desblokeatu. Mailari igon behar du
-                  poderak erabiltzeko.
-                </p>
-              )}
+              <p className="student-powers-note">
+                Ikasleak bere panelean erabiltzen ditu poderak. Hemen ikus
+                ditzakezu zein dauden desblokeatuta.
+              </p>
               {unlockedPowers.length > 0 && (
                 <section className="student-powers-section">
                   <h3 className="student-powers-title">Desblokeatuak</h3>
@@ -557,28 +589,16 @@ function StudentDetailModal({
                         <div className="student-power-info">
                           <span className="student-power-name">
                             {p.name}
-                            {p.collaborative && (
-                              <span className="student-power-collab" title="Kolaboratiboa">
-                                {' '}· talde
-                              </span>
+                            {p.mode === 'auto' && (
+                              <span className="student-power-mode-auto"> · auto</span>
+                            )}
+                            {p.mode === 'manual' && (
+                              <span className="student-power-mode-manual"> · onarpena</span>
                             )}
                           </span>
                           <span className="student-power-desc">{p.description}</span>
                         </div>
-                        <button
-                          type="button"
-                          className="student-power-use"
-                          onClick={() => onUsePower(p)}
-                          disabled={busy || student.mana < p.manaCost}
-                          title={
-                            student.mana < p.manaCost
-                              ? `Mana ${p.manaCost} behar da`
-                              : 'Erabili'
-                          }
-                        >
-                          <span>🔮 {p.manaCost}</span>
-                          <span>Erabili</span>
-                        </button>
+                        <span className="student-power-cost-badge">🔮 {p.manaCost}</span>
                       </li>
                     ))}
                   </ul>
@@ -702,10 +722,6 @@ function CustomAdjustControl({
     </div>
   )
 }
-
-// ============================================================
-// BULK ACTIONS BAR
-// ============================================================
 
 function BulkActionsBar({
   count,

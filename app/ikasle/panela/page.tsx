@@ -44,8 +44,10 @@ export default async function StudentPanelPage() {
   }
 
   const { student, classroom, ranking, position, team, activities } = data
+  const pendingRequests = data.pending_requests ?? []
   const safeAvatar = sanitizeAvatarConfig(student.avatar_config, 99)
   const level = xpToLevel(student.xp)
+  const teamMembers = team?.members ?? []
 
   return (
     <div className="student-shell">
@@ -101,6 +103,9 @@ export default async function StudentPanelPage() {
             heroClass={student.hero_class}
             level={level}
             mana={student.mana}
+            studentId={student.id}
+            teamMembers={teamMembers}
+            pendingRequests={pendingRequests}
           />
         </div>
       </main>

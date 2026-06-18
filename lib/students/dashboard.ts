@@ -54,6 +54,15 @@ export type StudentDashboardData = {
     mana_cost: number
     used_at: string
   }[]
+  pending_requests: {
+    id: string
+    power_id: string
+    power_name: string
+    mana_cost: number
+    status: 'pending' | 'approved' | 'denied'
+    created_at: string
+    resolved_at: string | null
+  }[]
   activities: {
     id: string
     activity_type: 'battle' | 'silence' | 'event' | 'reward' | 'adjustment' | 'power_used'

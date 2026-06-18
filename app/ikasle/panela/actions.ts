@@ -23,18 +23,17 @@ export async function updateStudentAvatar(
 
   const supabase = await createClient()
 
-  // Obtener el nivel actual del alumno para validar
-  const { data: student } = await supabase
-    .from('students')
-    .select('xp')
-    .eq('id', session.studentId)
-    .single()
+  // Obtener el nivel actual del alumno usando RPC security definer
+  // (RLS bloquearía el SELECT directo desde el contexto del alumno iron-session)
+  const { data: xpData, error: xpError } = await supabase.rpc('get_student_xp_safe', {
+    p_student_id: session.studentId,
+  })
 
-  if (!student) {
+  if (xpError || typeof xpData !== 'number') {
     return { success: false, error: 'Ikaslea ez da aurkitu.' }
   }
 
-  const level = xpToLevel(student.xp)
+  const level = xpToLevel(xpData)
   const sanitized = sanitizeAvatarConfig(newConfig, level)
 
   const { error } = await supabase.rpc('update_student_avatar', {

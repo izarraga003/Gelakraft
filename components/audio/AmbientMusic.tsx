@@ -4,56 +4,63 @@ import { useEffect, useRef, useState } from 'react'
 
 /**
  * Música ambient procedural generada con Web Audio API.
- * Sin assets externos. Pads suaves + arpegio melódico aleatorio sobre escala pentatónica.
- *
- * El usuario puede activar/desactivar con un botón. La preferencia se
- * guarda en localStorage. La música solo arranca tras la primera interacción
- * del usuario (limitación de autoplay del navegador).
+ * El usuario despliega los controles con click (no hover) para evitar
+ * que el panel desaparezca al intentar mover el slider.
  */
 
 const STORAGE_KEY = 'gelakraft-music-enabled'
 
-// Escala pentatónica mayor en A (A C# E F# B) — sonido evocador
-const PENTATONIC_HZ = [
-  220.0, // A3
-  261.63, // C4 (más bajo de lo necesario, sirve)
-  329.63, // E4
-  392.0, // G4
-  440.0, // A4
-  523.25, // C5
-  659.25, // E5
-]
-
-// Notas largas de pad: triadas suaves
+const PENTATONIC_HZ = [220.0, 261.63, 329.63, 392.0, 440.0, 523.25, 659.25]
 const PAD_NOTES = [
-  [110, 164.81, 220], // A2 - E3 - A3
-  [98, 146.83, 196], // G2 - D3 - G3
-  [123.47, 185, 246.94], // B2 - F#3 - B3
+  [110, 164.81, 220],
+  [98, 146.83, 196],
+  [123.47, 185, 246.94],
 ]
 
 export default function AmbientMusic() {
   const [enabled, setEnabled] = useState(false)
   const [volume, setVolume] = useState(0.3)
-  const [showControls, setShowControls] = useState(false)
+  const [open, setOpen] = useState(false)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const masterGainRef = useRef<GainNode | null>(null)
   const intervalRef = useRef<number | null>(null)
   const padTimeoutRef = useRef<number | null>(null)
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
 
-  // Cargar preferencia inicial
+  // Cargar preferencia (no autoplay, solo recordamos)
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'true') {
-      // No arrancamos solos por la política de autoplay.
-      // El alumno tendrá que pulsar el toggle al menos una vez.
-      // Pero el botón aparecerá con estado "off" para que active.
+    const storedVol = localStorage.getItem(STORAGE_KEY + '-volume')
+    if (storedVol) {
+      const v = parseFloat(storedVol)
+      if (!isNaN(v)) setVolume(Math.max(0, Math.min(1, v)))
     }
   }, [])
 
+  // Cerrar popup al hacer click fuera. Usamos `click` (no mousedown) para
+  // evitar interferir con el drag del input range, que necesita mousedown
+  // para iniciar el arrastre y mouseup para terminarlo.
+  useEffect(() => {
+    if (!open) return
+    function onDocClick(e: MouseEvent) {
+      if (!wrapperRef.current) return
+      if (!wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('click', onDocClick)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('click', onDocClick)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [open])
+
   function startMusic() {
     if (audioCtxRef.current) return
-
     try {
       const Ctor =
         window.AudioContext ||
@@ -63,16 +70,9 @@ export default function AmbientMusic() {
       const master = ctx.createGain()
       master.gain.value = volume * 0.5
       master.connect(ctx.destination)
-
       audioCtxRef.current = ctx
       masterGainRef.current = master
-
-      // Loop de arpegios cada 2.5-4 segundos
-      intervalRef.current = window.setInterval(() => {
-        playArpeggioNote()
-      }, 700)
-
-      // Loop de pads cada 8-12 segundos
+      intervalRef.current = window.setInterval(playArpeggioNote, 700)
       schedulePad()
     } catch (e) {
       console.error('Audio context error:', e)
@@ -82,9 +82,8 @@ export default function AmbientMusic() {
   function schedulePad() {
     if (!audioCtxRef.current || !masterGainRef.current) return
     playPad()
-    // Siguiente pad en 8-12 segundos
     padTimeoutRef.current = window.setTimeout(
-      () => schedulePad(),
+      schedulePad,
       8000 + Math.random() * 4000
     )
   }
@@ -93,16 +92,13 @@ export default function AmbientMusic() {
     const ctx = audioCtxRef.current
     const master = masterGainRef.current
     if (!ctx || !master) return
-
     const chord = PAD_NOTES[Math.floor(Math.random() * PAD_NOTES.length)]
-    const duration = 7 // segundos
-
+    const duration = 7
     chord.forEach((freq, idx) => {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.type = 'sine'
       osc.frequency.value = freq
-      gain.gain.value = 0
       gain.gain.setValueAtTime(0, ctx.currentTime)
       gain.gain.linearRampToValueAtTime(0.12 - idx * 0.02, ctx.currentTime + 2)
       gain.gain.setValueAtTime(0.12 - idx * 0.02, ctx.currentTime + duration - 2)
@@ -118,22 +114,16 @@ export default function AmbientMusic() {
     const ctx = audioCtxRef.current
     const master = masterGainRef.current
     if (!ctx || !master) return
-
-    // No tocar siempre; sólo el 60% de las veces
     if (Math.random() > 0.6) return
-
     const freq = PENTATONIC_HZ[Math.floor(Math.random() * PENTATONIC_HZ.length)]
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
-
     osc.type = 'triangle'
     osc.frequency.value = freq
-
     const now = ctx.currentTime
     gain.gain.setValueAtTime(0, now)
     gain.gain.linearRampToValueAtTime(0.08, now + 0.03)
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2)
-
     osc.connect(gain)
     gain.connect(master)
     osc.start(now)
@@ -162,10 +152,12 @@ export default function AmbientMusic() {
     }
   }, [])
 
-  // Ajustar volumen en tiempo real
   useEffect(() => {
     if (masterGainRef.current) {
       masterGainRef.current.gain.value = volume * 0.5
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY + '-volume', String(volume))
     }
   }, [volume])
 
@@ -175,29 +167,49 @@ export default function AmbientMusic() {
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, String(next))
     }
-    if (next) {
-      startMusic()
-    } else {
-      stopMusic()
-    }
+    if (next) startMusic()
+    else stopMusic()
   }
 
   return (
-    <div className="music-control" onMouseLeave={() => setShowControls(false)}>
+    <div className="music-control" ref={wrapperRef}>
       <button
         type="button"
         className={`music-toggle ${enabled ? 'music-toggle-on' : ''}`}
-        onClick={toggleMusic}
-        onMouseEnter={() => setShowControls(true)}
-        aria-label={enabled ? 'Musika itzali' : 'Musika piztu'}
-        title={enabled ? 'Musika itzali' : 'Musika piztu'}
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Musika kontrolak"
+        title="Musika kontrolak"
+        aria-expanded={open}
       >
         {enabled ? '🎵' : '🔇'}
       </button>
-      {enabled && showControls && (
-        <div className="music-volume-popup">
-          <label className="music-volume-label">
-            <span>Bolumena</span>
+
+      {open && (
+        <div
+          className="music-popup"
+          role="dialog"
+          aria-label="Musika"
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="music-popup-header">
+            <span className="music-popup-title">Musika giroa</span>
+            <button
+              type="button"
+              className={`music-popup-toggle ${enabled ? 'music-popup-toggle-on' : ''}`}
+              onClick={toggleMusic}
+            >
+              {enabled ? 'Itzali' : 'Piztu'}
+            </button>
+          </div>
+          <label className="music-popup-volume">
+            <span>
+              Bolumena
+              <span className="music-popup-volume-value">
+                {Math.round(volume * 100)}%
+              </span>
+            </span>
             <input
               type="range"
               min={0}
