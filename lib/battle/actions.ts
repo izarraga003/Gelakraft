@@ -65,11 +65,19 @@ export async function applyBattleResult(
     classHpEnd: input.classHpEnd,
   })
 
-  // Aplicar a todos los alumnos en una operación atómica
-  const { error: rpcError } = await supabase.rpc('apply_battle_result', {
+  // Aplicar a todos los alumnos + registrar en historial en una operación atómica
+  const { error: rpcError } = await supabase.rpc('record_activity', {
     p_classroom_id: input.classroomId,
+    p_activity_type: 'battle',
+    p_outcome: reward.outcome,
     p_xp_delta: reward.xpDelta,
     p_hearts_delta: reward.heartsDelta,
+    p_metadata: {
+      question_count: input.questionCount,
+      perfect: reward.perfect,
+      class_hp_start: input.classHpStart,
+      class_hp_end: input.classHpEnd,
+    },
   })
 
   if (rpcError) {

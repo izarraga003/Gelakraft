@@ -207,7 +207,14 @@ export default function IsiltasunErronka({
     if (!muted) playToolSound('mari-success')
 
     setBusy(true)
-    await applyRewardToClassroom(classroomId, config.xpReward, 0)
+    await applyRewardToClassroom(classroomId, config.xpReward, 0, {
+      type: 'silence',
+      outcome: 'success',
+      metadata: {
+        duration_minutes: config.durationMinutes,
+        noise_limit: config.noiseLimit,
+      },
+    })
     setBusy(false)
   }
 
@@ -219,7 +226,27 @@ export default function IsiltasunErronka({
 
     if (config.loseHearts) {
       setBusy(true)
-      await applyRewardToClassroom(classroomId, 0, -config.heartsLoss)
+      await applyRewardToClassroom(classroomId, 0, -config.heartsLoss, {
+        type: 'silence',
+        outcome: 'failure',
+        metadata: {
+          duration_minutes: config.durationMinutes,
+          noise_limit: config.noiseLimit,
+        },
+      })
+      setBusy(false)
+    } else {
+      // Aún así registramos la actividad para el historial
+      setBusy(true)
+      await applyRewardToClassroom(classroomId, 0, 0, {
+        type: 'silence',
+        outcome: 'failure',
+        metadata: {
+          duration_minutes: config.durationMinutes,
+          noise_limit: config.noiseLimit,
+          hearts_loss_disabled: true,
+        },
+      })
       setBusy(false)
     }
   }

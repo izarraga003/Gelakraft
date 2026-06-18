@@ -50,7 +50,7 @@ export default async function ClassroomDetailPage({
   const { data: students } = await supabase
     .from('students')
     .select(
-      'id, full_name, username, password_plain, hero_class, xp, hearts, max_hearts, mana, max_mana, created_at'
+      'id, full_name, username, password_plain, hero_class, avatar, xp, hearts, max_hearts, mana, max_mana, created_at'
     )
     .eq('classroom_id', id)
     .order('full_name', { ascending: true })

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { generateUsername, uniqueUsername } from './generate-username'
 import { generatePassword } from './generate-password'
 import { randomHeroClass } from './hero-class'
+import { randomAvatar } from './avatars'
 
 const BCRYPT_ROUNDS = 10
 
@@ -79,6 +80,7 @@ export async function createStudents(
     password_hash: string
     password_plain: string
     hero_class: string
+    avatar: string
   }[] = []
 
   for (const fullName of names) {
@@ -96,6 +98,7 @@ export async function createStudents(
       password_hash: passwordHash,
       password_plain: passwordPlain,
       hero_class: randomHeroClass(),
+      avatar: randomAvatar(),
     })
     created.push({ fullName, username, passwordPlain })
   }
@@ -184,13 +187,18 @@ export async function deleteStudent(
 /**
  * Aplica una recompensa o penalización a TODOS los alumnos de una ikasgela.
  *
+ * Si se pasa `activity`, también registra una entrada en el historial.
  * Genérica: vale para cualquier herramienta (isiltasun-erronka, ustekabeko, etc.).
- * Verifica que el profesor sea dueño de la ikasgela.
  */
 export async function applyRewardToClassroom(
   classroomId: string,
   xpDelta: number,
-  heartsDelta: number
+  heartsDelta: number,
+  activity?: {
+    type: 'battle' | 'silence' | 'event' | 'reward'
+    outcome: 'victory' | 'defeat' | 'success' | 'failure' | 'neutral'
+    metadata?: Record<string, unknown>
+  }
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
 
@@ -212,14 +220,25 @@ export async function applyRewardToClassroom(
     return { success: false, error: 'Ikasgela hori ez da zurea.' }
   }
 
-  const { error } = await supabase.rpc('apply_battle_result', {
-    p_classroom_id: classroomId,
-    p_xp_delta: xpDelta,
-    p_hearts_delta: heartsDelta,
-  })
-
-  if (error) {
-    return { success: false, error: error.message }
+  if (activity) {
+    // Aplicar + registrar en historial (operación atómica)
+    const { error } = await supabase.rpc('record_activity', {
+      p_classroom_id: classroomId,
+      p_activity_type: activity.type,
+      p_outcome: activity.outcome,
+      p_xp_delta: xpDelta,
+      p_hearts_delta: heartsDelta,
+      p_metadata: activity.metadata ?? {},
+    })
+    if (error) return { success: false, error: error.message }
+  } else {
+    // Solo aplicar stats sin historial
+    const { error } = await supabase.rpc('apply_battle_result', {
+      p_classroom_id: classroomId,
+      p_xp_delta: xpDelta,
+      p_hearts_delta: heartsDelta,
+    })
+    if (error) return { success: false, error: error.message }
   }
 
   revalidatePath(`/panela/ikasgela/${classroomId}`)

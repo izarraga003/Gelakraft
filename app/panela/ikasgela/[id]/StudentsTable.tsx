@@ -13,6 +13,7 @@ type Student = {
   username: string
   password_plain: string
   hero_class: HeroClass
+  avatar: string
   xp: number
   hearts: number
   max_hearts: number
@@ -94,7 +95,12 @@ export default function StudentsTable({
         <tbody>
           {students.map((s) => (
             <tr key={s.id}>
-              <td className="student-name">{s.full_name}</td>
+              <td className="student-name">
+                <span className="student-row-avatar" aria-hidden="true">
+                  {s.avatar}
+                </span>
+                {s.full_name}
+              </td>
               <td>
                 <span className={`student-hero-class hero-${s.hero_class}`}>
                   {HERO_CLASS_LABELS[s.hero_class]}
