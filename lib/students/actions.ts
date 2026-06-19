@@ -63,13 +63,18 @@ export async function createStudents(
     return { success: false, error: 'Aldi berean 50 ikasle gehienez sor daitezke.' }
   }
 
-  // Cargar usernames existentes en esta ikasgela
-  const { data: existingStudents } = await supabase
-    .from('students')
-    .select('username')
-    .eq('classroom_id', classroomId)
-
-  const usedUsernames = (existingStudents ?? []).map((s) => s.username)
+  // Cargar usernames existentes EN TODA LA BASE DE DATOS (no solo en esta
+  // ikasgela). Antes solo se chequeaba el aula actual, lo que permitía
+  // colisiones entre aulas (p.ej. dos "Maite García" en dos clases distintas
+  // generaban ambas "maite.garcia"). Eso rompe el login porque
+  // find_student_for_login no filtra por aula.
+  //
+  // Usamos una RPC SECURITY DEFINER porque RLS limita el SELECT directo a las
+  // aulas propias del profesor.
+  const { data: existingStudents } = await supabase.rpc('list_all_usernames')
+  const usedUsernames = (
+    (existingStudents ?? []) as { username: string }[]
+  ).map((s) => s.username)
 
   // Generar y preparar inserts
   const created: { fullName: string; username: string; passwordPlain: string }[] = []
