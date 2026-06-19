@@ -108,8 +108,36 @@ export async function createStudents(
     created.push({ fullName, username, passwordPlain })
   }
 
-  // Insert masivo
-  const { error: insertError } = await supabase.from('students').insert(inserts)
+  // Insert masivo con reintento si hubo una race condition (otro profesor
+  // creó un alumno con el mismo username entre nuestro chequeo y el insert).
+  let { error: insertError } = await supabase.from('students').insert(inserts)
+
+  if (insertError && insertError.code === '23505') {
+    // unique_violation: refrescar lista global y regenerar usernames
+    const { data: refreshed } = await supabase.rpc('list_all_usernames')
+    const refreshedUsernames = (
+      (refreshed ?? []) as { username: string }[]
+    ).map((s) => s.username)
+
+    // Regenerar usernames para todos los del batch
+    const recomputed: string[] = []
+    const localUsed = [...refreshedUsernames]
+    for (const ins of inserts) {
+      const base = generateUsername(ins.full_name)
+      const fresh = uniqueUsername(base, localUsed)
+      localUsed.push(fresh)
+      recomputed.push(fresh)
+    }
+    inserts.forEach((ins, i) => {
+      ins.username = recomputed[i]
+    })
+    created.forEach((c, i) => {
+      c.username = recomputed[i]
+    })
+
+    const retry = await supabase.from('students').insert(inserts)
+    insertError = retry.error
+  }
 
   if (insertError) {
     return {
