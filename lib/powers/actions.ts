@@ -32,7 +32,8 @@ export type PowerRequestWithStudents = PowerRequest & {
  *   - auto: aplica efecto en BD al instante (descuenta mana).
  *   - manual: crea request pendiente (reserva el mana descontándolo).
  *
- * Se aplican los overrides del classroom (modo + coste) si existen.
+ * Se aplican los overrides del classroom (modo, coste, nombre, descripción,
+ * nivel, icono) si existen.
  */
 export async function studentInvokePower(
   powerId: string,
@@ -47,8 +48,6 @@ export async function studentInvokePower(
   const supabase = await createClient()
 
   // Resolver classroom_id y overrides con RPC SECURITY DEFINER
-  // (el alumno usa iron-session, no Supabase auth, así que un SELECT
-  // directo a `students`/`power_overrides` se bloquea por RLS).
   const { data: lookupData, error: lookupError } = await supabase.rpc(
     'get_power_effective',
     {
@@ -64,6 +63,10 @@ export async function studentInvokePower(
     classroom_id?: string
     override_mode?: 'auto' | 'manual' | null
     override_mana_cost?: number | null
+    override_name?: string | null
+    override_description?: string | null
+    override_level_required?: number | null
+    override_icon?: string | null
   }
   if (!lookup?.found) {
     return { success: false, error: 'Ikaslea ez da aurkitu.' }
@@ -71,6 +74,7 @@ export async function studentInvokePower(
 
   const effectiveMode = (lookup.override_mode ?? power.mode) as 'auto' | 'manual'
   const effectiveCost = lookup.override_mana_cost ?? power.manaCost
+  const effectiveName = lookup.override_name ?? power.name
 
   if (effectiveMode === 'auto' && power.mode === 'auto') {
     const requiresTarget = power.requiresTarget
@@ -80,7 +84,7 @@ export async function studentInvokePower(
     const { data, error } = await supabase.rpc('execute_power_auto', {
       p_student_id: session.studentId,
       p_power_id: power.id,
-      p_power_name: power.name,
+      p_power_name: effectiveName,
       p_mana_cost: effectiveCost,
       p_effect_type: power.effect,
       p_effect_value: power.effectValue,
@@ -97,7 +101,7 @@ export async function studentInvokePower(
   const { data, error } = await supabase.rpc('request_power', {
     p_student_id: session.studentId,
     p_power_id: power.id,
-    p_power_name: power.name,
+    p_power_name: effectiveName,
     p_mana_cost: effectiveCost,
     p_target_student_id: targetStudentId ?? null,
   })

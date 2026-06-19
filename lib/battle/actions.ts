@@ -13,6 +13,7 @@ export type ApplyBattleResultInput = {
   questionCount: number
   classHpStart: number
   classHpEnd: number
+  heartsLossOnDefeat?: number
 }
 
 export type ApplyBattleResultOutput =
@@ -29,10 +30,6 @@ export type ApplyBattleResultOutput =
 
 /**
  * Aplica el resultado de la batalla a todos los alumnos de la ikasgela.
- *
- * Verifica que el profesor sea dueño de la ikasgela y luego llama a la
- * función SQL `apply_battle_result`, que actualiza atómicamente XP y vidas
- * de todos los alumnos.
  */
 export async function applyBattleResult(
   input: ApplyBattleResultInput
@@ -46,7 +43,6 @@ export async function applyBattleResult(
     return { success: false, error: 'Saioa hasi behar duzu.' }
   }
 
-  // Verificar que el profesor es dueño
   const { data: classroom, error: classroomError } = await supabase
     .from('classrooms')
     .select('id, teacher_id')
@@ -57,15 +53,19 @@ export async function applyBattleResult(
     return { success: false, error: 'Ikasgela hori ez da zurea.' }
   }
 
-  // Calcular recompensa en servidor (NO confiar en cliente)
   const reward = computeBattleReward({
     outcome: input.outcome,
     questionCount: input.questionCount,
     classHpStart: input.classHpStart,
     classHpEnd: input.classHpEnd,
+    heartsLossOnDefeat: input.heartsLossOnDefeat,
   })
 
-  // Aplicar a todos los alumnos + registrar en historial en una operación atómica
+  // Si es empate (tie), no se aplica ningún cambio en BD ni se registra.
+  if (reward.outcome === 'tie') {
+    return { success: true, reward }
+  }
+
   const { error: rpcError } = await supabase.rpc('record_activity', {
     p_classroom_id: input.classroomId,
     p_activity_type: 'battle',

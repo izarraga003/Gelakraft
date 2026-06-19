@@ -9,6 +9,7 @@ import {
   rollPlayerHit,
   rollEnemyAttack,
   type HitResult,
+  type BattleOutcome,
 } from '@/lib/battle/balance'
 import { applyBattleResult } from '@/lib/battle/actions'
 
@@ -18,9 +19,10 @@ type BattleScreenProps = {
   questionCount: number
   sugaarHp: number
   classHp: number
+  heartsLossOnDefeat: number
 }
 
-type Phase = 'fighting' | 'finishing' | 'won' | 'lost'
+type Phase = 'fighting' | 'tie-question' | 'finishing' | 'won' | 'lost' | 'tied'
 
 type FloatingNumber = {
   id: number
@@ -36,13 +38,14 @@ export default function BattleScreen({
   questionCount,
   sugaarHp: maxSugaarHp,
   classHp: maxClassHp,
+  heartsLossOnDefeat,
 }: BattleScreenProps) {
   const router = useRouter()
 
   const [phase, setPhase] = useState<Phase>('fighting')
   const [sugaarHp, setSugaarHp] = useState(maxSugaarHp)
   const [classHp, setClassHp] = useState(maxClassHp)
-  const [questionIdx, setQuestionIdx] = useState(0) // preguntas respondidas
+  const [questionIdx, setQuestionIdx] = useState(0)
   const [animation, setAnimation] = useState<
     'idle' | 'hit' | 'crit' | 'miss' | 'attack' | 'defeated'
   >('idle')
@@ -50,7 +53,7 @@ export default function BattleScreen({
   const [muted, setMuted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [reward, setReward] = useState<{
-    outcome: 'victory' | 'defeat'
+    outcome: BattleOutcome
     xpDelta: number
     heartsDelta: number
     perfect: boolean
@@ -63,66 +66,64 @@ export default function BattleScreen({
     [muted]
   )
 
-  const addFloating = useCallback((value: string, variant: FloatingNumber['variant']) => {
-    const id = ++floatingIdCounter
-    setFloating((prev) => [...prev, { id, value, variant }])
-    setTimeout(() => {
-      setFloating((prev) => prev.filter((f) => f.id !== id))
-    }, 1100)
-  }, [])
+  const addFloating = useCallback(
+    (value: string, variant: FloatingNumber['variant']) => {
+      const id = ++floatingIdCounter
+      setFloating((prev) => [...prev, { id, value, variant }])
+      setTimeout(() => {
+        setFloating((prev) => prev.filter((f) => f.id !== id))
+      }, 1100)
+    },
+    []
+  )
+
+  const applyResult = useCallback(
+    async (outcome: BattleOutcome) => {
+      setBusy(true)
+      const result = await applyBattleResult({
+        classroomId,
+        outcome,
+        questionCount,
+        classHpStart: maxClassHp,
+        classHpEnd: classHp,
+        heartsLossOnDefeat,
+      })
+      setBusy(false)
+
+      if (result.success) {
+        setReward(result.reward)
+      }
+      setPhase(
+        outcome === 'victory' ? 'won' : outcome === 'tie' ? 'tied' : 'lost'
+      )
+    },
+    [classroomId, questionCount, maxClassHp, classHp, heartsLossOnDefeat]
+  )
 
   // Finalizar la batalla cuando llega a una condición terminal
   useEffect(() => {
     if (phase !== 'fighting') return
 
-    let nextPhase: Phase | null = null
-
     if (sugaarHp <= 0) {
-      nextPhase = 'finishing'
+      setPhase('finishing')
       setAnimation('defeated')
       setTimeout(() => play('victory'), 300)
-    } else if (classHp <= 0) {
-      nextPhase = 'finishing'
+      void applyResult('victory')
+      return
+    }
+
+    if (classHp <= 0) {
+      setPhase('finishing')
       setTimeout(() => play('defeat'), 300)
-    } else if (questionIdx >= questionCount) {
-      // Se acabaron las preguntas: gana quien tenga más HP relativa
-      nextPhase = 'finishing'
-      if (sugaarHp / maxSugaarHp <= classHp / maxClassHp) {
-        // La clase ganó por puntos (más HP relativa)
-        setAnimation('defeated')
-        setTimeout(() => play('victory'), 300)
-      } else {
-        setTimeout(() => play('defeat'), 300)
-      }
+      void applyResult('defeat')
+      return
     }
 
-    if (nextPhase) {
-      setPhase(nextPhase)
-      const outcome: 'victory' | 'defeat' =
-        sugaarHp <= 0 ||
-        (questionIdx >= questionCount && sugaarHp / maxSugaarHp <= classHp / maxClassHp)
-          ? 'victory'
-          : 'defeat'
-      void applyResult(outcome)
+    if (questionIdx >= questionCount) {
+      // Se acabaron las preguntas: nadie ha muerto → empate, abrir modal de pregunta
+      setPhase('tie-question')
     }
-  }, [sugaarHp, classHp, questionIdx, questionCount, phase, maxSugaarHp, maxClassHp, play])
-
-  async function applyResult(outcome: 'victory' | 'defeat') {
-    setBusy(true)
-    const result = await applyBattleResult({
-      classroomId,
-      outcome,
-      questionCount,
-      classHpStart: maxClassHp,
-      classHpEnd: classHp,
-    })
-    setBusy(false)
-
-    if (result.success) {
-      setReward(result.reward)
-    }
-    setPhase(outcome === 'victory' ? 'won' : 'lost')
-  }
+  }, [sugaarHp, classHp, questionIdx, questionCount, phase, applyResult, play])
 
   function handleCorrect() {
     if (phase !== 'fighting' || busy) return
@@ -161,6 +162,25 @@ export default function BattleScreen({
     setTimeout(() => setAnimation('idle'), 700)
   }
 
+  function handleTieCorrect() {
+    setPhase('finishing')
+    setAnimation('defeated')
+    setSugaarHp(0)
+    setTimeout(() => play('victory'), 300)
+    void applyResult('victory')
+  }
+
+  function handleTieIncorrect() {
+    setPhase('finishing')
+    setTimeout(() => play('defeat'), 300)
+    void applyResult('defeat')
+  }
+
+  function handleTieSkip() {
+    setPhase('finishing')
+    void applyResult('tie')
+  }
+
   function handleExit() {
     const confirmed = window.confirm(
       'Batailatik atera nahi duzu? Ez da inolako emaitzarik gordeko.'
@@ -176,11 +196,11 @@ export default function BattleScreen({
   }
 
   // ============== PANTALLA DE RESULTADO ==============
-  if (phase === 'won' || phase === 'lost') {
+  if (phase === 'won' || phase === 'lost' || phase === 'tied') {
     return (
       <div className={`battle-result battle-result-${phase}`}>
         <div className="battle-result-content">
-          {phase === 'won' ? (
+          {phase === 'won' && (
             <>
               <div className="battle-result-eyebrow">Garaipena</div>
               <h1 className="battle-result-title">SUGAAR MENDERATU DUZUE!</h1>
@@ -191,7 +211,9 @@ export default function BattleScreen({
                 <div className="battle-result-rewards">
                   <div className="battle-reward-item">
                     <div className="battle-reward-icon">⚡</div>
-                    <div className="battle-reward-value">+{reward.xpDelta} XP</div>
+                    <div className="battle-reward-value">
+                      +{reward.xpDelta} XP
+                    </div>
                     <div className="battle-reward-label">ikasle bakoitzeko</div>
                   </div>
                   {reward.perfect && (
@@ -202,15 +224,17 @@ export default function BattleScreen({
                 </div>
               )}
             </>
-          ) : (
+          )}
+
+          {phase === 'lost' && (
             <>
               <div className="battle-result-eyebrow">Galera</div>
               <h1 className="battle-result-title">SUGAARREK GARAITU ZAITUZTE.</h1>
               <p className="battle-result-sub">
-                {classroomName} oraingoan ezin izan du Sugaar menderatu. Hurrengoan
-                izango da.
+                {classroomName} oraingoan ezin izan du Sugaar menderatu.
+                Hurrengoan izango da.
               </p>
-              {reward && (
+              {reward && reward.heartsDelta < 0 && (
                 <div className="battle-result-rewards">
                   <div className="battle-reward-item battle-reward-loss">
                     <div className="battle-reward-icon">💔</div>
@@ -221,6 +245,17 @@ export default function BattleScreen({
                   </div>
                 </div>
               )}
+            </>
+          )}
+
+          {phase === 'tied' && (
+            <>
+              <div className="battle-result-eyebrow">Berdinketa</div>
+              <h1 className="battle-result-title">EZ DA EZER ERABAKI.</h1>
+              <p className="battle-result-sub">
+                Ez du inork irabazi. Sugaarrek bere kobazulora itzuli da
+                hurrengoan zain.
+              </p>
             </>
           )}
 
@@ -269,7 +304,12 @@ export default function BattleScreen({
 
       <div className="battle-stage">
         <div className="battle-hp-enemy">
-          <HealthBar label="Sugaar" current={sugaarHp} max={maxSugaarHp} variant="enemy" />
+          <HealthBar
+            label="Sugaar"
+            current={sugaarHp}
+            max={maxSugaarHp}
+            variant="enemy"
+          />
         </div>
 
         <div className="battle-sugaar-wrapper">
@@ -315,6 +355,53 @@ export default function BattleScreen({
           <span className="battle-btn-hint">Sugaarrek erasotuko du</span>
         </button>
       </div>
+
+      {/* ============== MODAL DE EMPATE: pregunta decisiva ============== */}
+      {phase === 'tie-question' && (
+        <div className="battle-tie-overlay" role="dialog" aria-modal="true">
+          <div className="battle-tie-modal">
+            <div className="battle-tie-eyebrow">Berdinketa</div>
+            <h2 className="battle-tie-title">
+              Galdera erabakigarria
+            </h2>
+            <p className="battle-tie-sub">
+              Galderak amaitu dira, baina inor ez da hil. Egin orain ahoz
+              klaseari azken galdera bat. Klaseak ondo erantzun badu, Sugaar
+              menderatuko dute. Akatsa eginez gero, Sugaarrek bizirik iraungo
+              du eta klaseak{' '}
+              <strong>{heartsLossOnDefeat} bihotz</strong> galduko du.
+            </p>
+
+            <div className="battle-tie-actions">
+              <button
+                type="button"
+                className="battle-tie-btn battle-tie-btn-correct"
+                onClick={handleTieCorrect}
+                disabled={busy}
+              >
+                ✓ Zuzen erantzun dute
+              </button>
+              <button
+                type="button"
+                className="battle-tie-btn battle-tie-btn-incorrect"
+                onClick={handleTieIncorrect}
+                disabled={busy}
+              >
+                ✗ Oker erantzun dute
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="battle-tie-skip"
+              onClick={handleTieSkip}
+              disabled={busy}
+            >
+              Galdera saltatu (berdinketa mantendu)
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

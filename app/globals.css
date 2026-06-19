@@ -8412,3 +8412,350 @@ button[class=""]:disabled {
 .bulk-btn:hover:not(:disabled) {
   transform: translateY(-1px);
 }
+
+/* ============================================
+   BOTEREAK EDITOR (expandible cards)
+   ============================================ */
+.botereak-cards {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.botereak-card {
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.22);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.botereak-card-overridden {
+  border-color: var(--urrea);
+  background: linear-gradient(180deg, rgba(184, 138, 60, 0.03), white);
+}
+.botereak-card-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-inter-stack);
+}
+.botereak-card-summary:hover {
+  background: rgba(184, 138, 60, 0.04);
+}
+.botereak-card-icon {
+  font-size: 26px;
+  width: 38px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.botereak-card-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.botereak-card-name {
+  font-family: var(--font-fraunces-stack);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ilun);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.botereak-card-badge {
+  font-family: var(--font-inter-stack);
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--urrea);
+  color: var(--ilun);
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.botereak-card-meta {
+  font-size: 12px;
+  color: var(--iluntze);
+  opacity: 0.85;
+  font-family: var(--font-inter-stack);
+}
+.botereak-card-chev {
+  font-size: 18px;
+  color: var(--iluntze);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.botereak-card-body {
+  padding: 14px 16px 16px;
+  border-top: 1px solid rgba(184, 138, 60, 0.15);
+  background: rgba(184, 138, 60, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.botereak-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.botereak-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 16px;
+}
+@media (max-width: 700px) {
+  .botereak-field-row { grid-template-columns: 1fr; gap: 10px; }
+}
+.botereak-label {
+  font-family: var(--font-fraunces-stack);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--iluntze);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.botereak-text-input,
+.botereak-textarea,
+.botereak-num-input,
+.botereak-icon-input {
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.3);
+  border-radius: 5px;
+  padding: 7px 10px;
+  font-family: var(--font-inter-stack);
+  font-size: 13.5px;
+  color: var(--ilun);
+}
+.botereak-textarea {
+  font-family: var(--font-inter-stack);
+  resize: vertical;
+  min-height: 50px;
+}
+.botereak-num-input {
+  width: 100px;
+  text-align: center;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+}
+.botereak-icon-input {
+  width: 80px;
+  text-align: center;
+  font-size: 24px;
+  padding: 4px 8px;
+}
+.botereak-text-input:focus,
+.botereak-textarea:focus,
+.botereak-num-input:focus,
+.botereak-icon-input:focus {
+  outline: none;
+  border-color: var(--urrea);
+  box-shadow: 0 0 0 3px rgba(184, 138, 60, 0.15);
+}
+.botereak-icon-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.botereak-emoji-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: 4px;
+  padding: 8px;
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.2);
+  border-radius: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+.botereak-emoji-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+}
+.botereak-emoji-btn:hover:not(:disabled) {
+  background: rgba(184, 138, 60, 0.1);
+  border-color: var(--urrea);
+  transform: scale(1.15);
+}
+.botereak-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.botereak-reset-btn {
+  background: transparent;
+  border: 1.5px solid rgba(184, 138, 60, 0.4);
+  color: var(--iluntze);
+  border-radius: 5px;
+  padding: 6px 12px;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.botereak-reset-btn:hover:not(:disabled) {
+  background: rgba(184, 138, 60, 0.08);
+  border-color: var(--urrea);
+  color: var(--ilun);
+}
+
+/* ============================================
+   BATTLE: 3 escenarios + modal de empate
+   ============================================ */
+.battle-scenarios-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.battle-scenario {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.battle-scenario-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.battle-scenario-victory {
+  background: rgba(79, 139, 58, 0.05);
+  border-color: rgba(79, 139, 58, 0.25);
+}
+.battle-scenario-tie {
+  background: rgba(184, 138, 60, 0.05);
+  border-color: rgba(184, 138, 60, 0.3);
+}
+.battle-scenario-defeat {
+  background: rgba(194, 70, 23, 0.05);
+  border-color: rgba(194, 70, 23, 0.25);
+}
+
+/* Battle tie modal */
+.battle-tie-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 8, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 20px;
+}
+.battle-tie-modal {
+  background: linear-gradient(180deg, #2A1A2A, #1A0F1F);
+  border: 2px solid var(--urrea);
+  border-radius: 14px;
+  max-width: 540px;
+  width: 100%;
+  padding: 32px 28px;
+  text-align: center;
+  color: var(--argi);
+  box-shadow: 0 0 60px rgba(184, 138, 60, 0.35);
+  animation: tie-modal-in 0.4s ease-out;
+}
+@keyframes tie-modal-in {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.battle-tie-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--urrea-light, #E8C84B);
+  margin-bottom: 10px;
+}
+.battle-tie-title {
+  font-family: var(--font-fraunces-stack);
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 14px;
+  color: var(--argi);
+}
+.battle-tie-sub {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(239, 229, 208, 0.85);
+  margin: 0 0 24px;
+}
+.battle-tie-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.battle-tie-btn {
+  flex: 1;
+  min-width: 180px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  border: none;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.battle-tie-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.battle-tie-btn-correct {
+  background: linear-gradient(135deg, #4F8B3A, #3A6B28);
+  color: white;
+}
+.battle-tie-btn-correct:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(79, 139, 58, 0.4);
+}
+.battle-tie-btn-incorrect {
+  background: linear-gradient(135deg, #C24617, #8E2B0F);
+  color: white;
+}
+.battle-tie-btn-incorrect:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(194, 70, 23, 0.4);
+}
+.battle-tie-skip {
+  background: transparent;
+  border: 1px solid rgba(239, 229, 208, 0.25);
+  color: rgba(239, 229, 208, 0.7);
+  border-radius: 5px;
+  padding: 8px 14px;
+  font-family: var(--font-inter-stack);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.battle-tie-skip:hover:not(:disabled) {
+  background: rgba(239, 229, 208, 0.08);
+  color: var(--argi);
+}
+
+.battle-result-tied {
+  background: linear-gradient(135deg, #2A1A2A, #1A0F1F);
+}

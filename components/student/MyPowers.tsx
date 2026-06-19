@@ -50,8 +50,8 @@ export default function MyPowers({
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
   const [targetingPower, setTargetingPower] = useState<EffectivePower | null>(null)
 
-  const unlocked = powers.filter((p) => p.levelRequired <= level)
-  const locked = powers.filter((p) => p.levelRequired > level)
+  const unlocked = powers.filter((p) => p.effectiveLevelRequired <= level)
+  const locked = powers.filter((p) => p.effectiveLevelRequired > level)
 
   const teamMatesExcludingSelf = teamMembers.filter((m) => m.id !== studentId)
 
@@ -173,11 +173,11 @@ export default function MyPowers({
                   className={`my-power-card ${!canAfford ? 'my-power-card-noemana' : ''}`}
                 >
                   <span className="my-power-icon" aria-hidden="true">
-                    {p.icon}
+                    {p.effectiveIcon}
                   </span>
                   <div className="my-power-info">
                     <span className="my-power-name">
-                      {p.name}
+                      {p.effectiveName}
                       {p.collaborative && (
                         <span className="my-power-collab"> · talde</span>
                       )}
@@ -187,7 +187,7 @@ export default function MyPowers({
                         <span className="my-power-tag my-power-tag-manual"> · baieztatu</span>
                       )}
                     </span>
-                    <span className="my-power-desc">{p.description}</span>
+                    <span className="my-power-desc">{p.effectiveDescription}</span>
                   </div>
                   <button
                     type="button"
@@ -217,14 +217,14 @@ export default function MyPowers({
             {locked.slice(0, 3).map((p) => (
               <li key={p.id} className="my-power-card my-power-card-locked">
                 <span className="my-power-icon" aria-hidden="true">
-                  {p.icon}
+                  {p.effectiveIcon}
                 </span>
                 <div className="my-power-info">
-                  <span className="my-power-name">{p.name}</span>
-                  <span className="my-power-desc">{p.description}</span>
+                  <span className="my-power-name">{p.effectiveName}</span>
+                  <span className="my-power-desc">{p.effectiveDescription}</span>
                 </div>
                 <span className="my-power-locked-label">
-                  🔒 Mla {p.levelRequired}
+                  🔒 Mla {p.effectiveLevelRequired}
                 </span>
               </li>
             ))}

@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import IkasleakTable from './IkasleakTable'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 type Params = { id: string }
 
 export default async function IkasleakPage({
@@ -18,6 +21,11 @@ export default async function IkasleakPage({
     .eq('id', id)
     .single()
   if (!classroom) notFound()
+
+  // Sincronizar mana/hearts antes de leer
+  await supabase.rpc('apply_weekly_grants_for_classroom', {
+    p_classroom_id: id,
+  })
 
   const { data: students } = await supabase
     .from('students')

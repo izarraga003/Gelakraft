@@ -52,7 +52,11 @@ const VICTORY_BASE_XP = 50
 const VICTORY_XP_PER_QUESTION = 5
 const VICTORY_PERFECT_BONUS = 20 // si la clase no recibió ningún ataque
 
-const DEFEAT_HEARTS_LOSS = -1
+const DEFAULT_HEARTS_LOSS = 1
+
+export const MIN_HEARTS_LOSS = 0
+export const MAX_HEARTS_LOSS = 5
+export const DEFAULT_HEARTS_LOSS_INIT = DEFAULT_HEARTS_LOSS
 
 // ============================================================
 // FUNCIONES DERIVADAS
@@ -123,7 +127,7 @@ export function rollEnemyAttack(): EnemyAttackResult {
 // RECOMPENSAS / PENALIZACIONES
 // ============================================================
 
-export type BattleOutcome = 'victory' | 'defeat'
+export type BattleOutcome = 'victory' | 'defeat' | 'tie'
 
 export type BattleReward = {
   outcome: BattleOutcome
@@ -138,12 +142,26 @@ export function computeBattleReward(args: {
   questionCount: number
   classHpStart: number
   classHpEnd: number
+  /** Cuántos corazones pierde cada alumno si la clase pierde (>=0). */
+  heartsLossOnDefeat?: number
 }): BattleReward {
   if (args.outcome === 'defeat') {
+    const loss = Math.max(
+      0,
+      Math.min(MAX_HEARTS_LOSS, args.heartsLossOnDefeat ?? DEFAULT_HEARTS_LOSS)
+    )
     return {
       outcome: 'defeat',
       xpDelta: 0,
-      heartsDelta: DEFEAT_HEARTS_LOSS,
+      heartsDelta: -loss,
+      perfect: false,
+    }
+  }
+  if (args.outcome === 'tie') {
+    return {
+      outcome: 'tie',
+      xpDelta: 0,
+      heartsDelta: 0,
       perfect: false,
     }
   }

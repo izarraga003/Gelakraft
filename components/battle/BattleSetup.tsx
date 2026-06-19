@@ -8,6 +8,9 @@ import {
   DEFAULT_QUESTION_COUNT,
   MIN_QUESTION_COUNT,
   MAX_QUESTION_COUNT,
+  MIN_HEARTS_LOSS,
+  MAX_HEARTS_LOSS,
+  DEFAULT_HEARTS_LOSS_INIT,
   computeSugaarHp,
   computeClassHp,
 } from '@/lib/battle/balance'
@@ -25,6 +28,7 @@ export default function BattleSetup({
 }: BattleSetupProps) {
   const [questionCount, setQuestionCount] = useState(DEFAULT_QUESTION_COUNT)
   const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY)
+  const [heartsLoss, setHeartsLoss] = useState(DEFAULT_HEARTS_LOSS_INIT)
   const [started, setStarted] = useState(false)
 
   if (started) {
@@ -35,6 +39,7 @@ export default function BattleSetup({
         questionCount={questionCount}
         sugaarHp={computeSugaarHp(difficulty)}
         classHp={computeClassHp(difficulty)}
+        heartsLossOnDefeat={heartsLoss}
       />
     )
   }
@@ -48,9 +53,10 @@ export default function BattleSetup({
         <div className="panel-eyebrow">Tresna · I</div>
         <h1 className="panel-title">Sugaarren aurkako borroka.</h1>
         <p className="panel-subtitle">
-          {classroomName} ikasgela <strong>Sugaar</strong>en aurka borrokatuko da. Galderak
-          ahoz egingo dituzu eta erantzun bakoitzaren emaitza markatuko duzu pantailan.
-          Aciertoak HP-a kentzen diote Sugaar-i; akatsek klaseari kalte egiten diote.
+          {classroomName} ikasgela <strong>Sugaar</strong>en aurka borrokatuko da.
+          Galderak ahoz egingo dituzu eta erantzun bakoitzaren emaitza markatuko
+          duzu pantailan. Zuzenek HPa kentzen diote Sugaar-i; okerrek klaseari
+          kalte egiten diote.
         </p>
       </section>
 
@@ -110,32 +116,96 @@ export default function BattleSetup({
                 <span>Ahaltsu</span>
               </div>
               <span className="battle-setup-hint">
-                Sugaar HP: <strong>{computeSugaarHp(difficulty)}</strong> · Klasearen
-                HP: <strong>{computeClassHp(difficulty)}</strong>
+                Sugaar HP: <strong>{computeSugaarHp(difficulty)}</strong> ·
+                Klasearen HP: <strong>{computeClassHp(difficulty)}</strong>
+              </span>
+            </label>
+          </div>
+
+          <div className="battle-setup-row">
+            <label className="battle-setup-field">
+              <span className="battle-setup-label">
+                Galera kostua (galtzean kentzen diren bihotzak)
+              </span>
+              <div className="battle-setup-numeric">
+                <button
+                  type="button"
+                  className="battle-numeric-btn"
+                  onClick={() =>
+                    setHeartsLoss((n) => Math.max(MIN_HEARTS_LOSS, n - 1))
+                  }
+                  disabled={heartsLoss <= MIN_HEARTS_LOSS}
+                  aria-label="Bat gutxiago"
+                >
+                  −
+                </button>
+                <span className="battle-numeric-value">❤️ {heartsLoss}</span>
+                <button
+                  type="button"
+                  className="battle-numeric-btn"
+                  onClick={() =>
+                    setHeartsLoss((n) => Math.min(MAX_HEARTS_LOSS, n + 1))
+                  }
+                  disabled={heartsLoss >= MAX_HEARTS_LOSS}
+                  aria-label="Bat gehiago"
+                >
+                  +
+                </button>
+              </div>
+              <span className="battle-setup-hint">
+                Klaseak galtzen badu, ikasle bakoitzak bihotz kopuru hori
+                galduko du.
               </span>
             </label>
           </div>
 
           <div className="battle-setup-info">
+            <h3 className="battle-setup-info-title">Hiru egoera posible</h3>
+            <ul className="battle-scenarios-list">
+              <li className="battle-scenario battle-scenario-victory">
+                <span className="battle-scenario-icon">⚔️</span>
+                <div>
+                  <strong>Garaipena:</strong> Sugaarrek HP guztia galtzen du eta
+                  klaseak garaitzen du. Ikasle guztiek esperientzia irabaziko
+                  dute.
+                </div>
+              </li>
+              <li className="battle-scenario battle-scenario-tie">
+                <span className="battle-scenario-icon">⚖️</span>
+                <div>
+                  <strong>Berdinketa:</strong> Galderak amaitzen badira eta inor
+                  ez bada hil, klaseari galdera ezagun bat egingo zaio ahoz.
+                  Erantzun zuzena → Sugaar garaitzen dute. Akatsa → Sugaar
+                  ateratzen da garaile.
+                </div>
+              </li>
+              <li className="battle-scenario battle-scenario-defeat">
+                <span className="battle-scenario-icon">💔</span>
+                <div>
+                  <strong>Galera:</strong> Klaseak HP guztia galtzen du.
+                  Sugaarrek ihes egiten dio eta ikasle bakoitzak{' '}
+                  <strong>{heartsLoss}</strong> bihotz galtzen du.
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div className="battle-setup-info">
             <h3 className="battle-setup-info-title">Nola dabilen</h3>
             <ol className="battle-setup-info-list">
-              <li>
-                Galdera bat egiten duzu ahoz ikasleei (ez du sistemak gordetzen).
-              </li>
+              <li>Galdera bat egiten duzu ahoz ikasleei.</li>
               <li>
                 Norbaitek erantzun ondoren, sakatu <strong>ZUZEN</strong> edo{' '}
                 <strong>OKER</strong>.
               </li>
               <li>
-                Zuzena: Sugaarrek HP galtzen du (kaltea ausazkoa da — kritikoa edo
-                hutsegitea ere posible).
+                Zuzena: Sugaarrek HP galtzen du (kritikoa edo hutsegitea ere
+                posible).
               </li>
+              <li>Okerra: Sugaarrek klaseari erasoten dio.</li>
               <li>
-                Okerra: Sugaarrek klaseari erasoten dio.
-              </li>
-              <li>
-                Galderak amaitu edo bietako baten HP 0 iristen denean, batailak amaitzen
-                dira.
+                Galderak amaitu edo bietako baten HP 0 iristen denean, batailak
+                amaitzen dira.
               </li>
             </ol>
           </div>
@@ -160,7 +230,9 @@ export default function BattleSetup({
               onClick={() => setStarted(true)}
               disabled={studentCount === 0}
             >
-              {studentCount === 0 ? 'Ikaslerik gabe ezin da hasi' : 'Hasi borroka'}
+              {studentCount === 0
+                ? 'Ikaslerik gabe ezin da hasi'
+                : 'Hasi borroka'}
             </button>
           </div>
         </div>

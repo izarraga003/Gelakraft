@@ -16,6 +16,11 @@ import {
   D20Icon,
 } from '@/components/icons'
 
+// Forzar renderizado dinámico para que el profe vea siempre valores frescos
+// (no quedarse con un snapshot con mana/hearts antiguos).
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const STAGE_LABELS: Record<string, string> = {
   lehen: 'Lehen Hezkuntza',
   dbh: 'DBH',
@@ -46,6 +51,12 @@ export default async function ClassroomDetailPage({
     .eq('id', id)
     .single()
   if (!classroom) notFound()
+
+  // Aplicar grants semanales pendientes a todos los alumnos del aula
+  // para que el profe vea valores sincronizados con los del alumno.
+  await supabase.rpc('apply_weekly_grants_for_classroom', {
+    p_classroom_id: id,
+  })
 
   const { data: students } = await supabase
     .from('students')
