@@ -8759,3 +8759,137 @@ button[class=""]:disabled {
 .battle-result-tied {
   background: linear-gradient(135deg, #2A1A2A, #1A0F1F);
 }
+
+/* ============================================
+   BOTEREAK EDITOR: botón guardar explícito
+   ============================================ */
+.botereak-card-dirty {
+  border-color: var(--sugaar) !important;
+  box-shadow: 0 0 0 3px rgba(194, 70, 23, 0.08);
+}
+.botereak-card-badge-dirty {
+  background: var(--sugaar) !important;
+  color: white !important;
+  animation: pulse-dirty 1.6s ease-in-out infinite;
+}
+@keyframes pulse-dirty {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+.botereak-card-badge-saved {
+  background: linear-gradient(135deg, #4F8B3A, #3A6B28) !important;
+  color: white !important;
+  animation: saved-pop 0.4s ease-out;
+}
+@keyframes saved-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.botereak-emoji-btn-on {
+  background: var(--urrea) !important;
+  border-color: var(--urrea) !important;
+  box-shadow: 0 2px 8px rgba(184, 138, 60, 0.35);
+}
+
+.botereak-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+}
+.botereak-save-btn {
+  background: linear-gradient(135deg, var(--ilun), var(--iluntze));
+  color: var(--argi);
+  border: none;
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.botereak-save-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--sugaar), #8E2B0F);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(194, 70, 23, 0.25);
+}
+.botereak-save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--iluntze);
+}
+
+/* Barra flotante inferior cuando hay cambios sin guardar */
+.botereak-floating-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ilun);
+  color: var(--argi);
+  border: 1.5px solid var(--urrea);
+  border-radius: 50px;
+  padding: 10px 14px 10px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+  z-index: 1500;
+  animation: floating-bar-in 0.3s ease-out;
+  max-width: calc(100vw - 32px);
+}
+@keyframes floating-bar-in {
+  from { transform: translate(-50%, 30px); opacity: 0; }
+  to   { transform: translate(-50%, 0);    opacity: 1; }
+}
+.botereak-floating-info {
+  font-family: var(--font-inter-stack);
+  font-size: 13.5px;
+  color: var(--argi);
+  white-space: nowrap;
+}
+.botereak-floating-info strong {
+  font-family: var(--font-fraunces-stack);
+  font-size: 15px;
+  color: var(--urrea);
+  margin-right: 2px;
+}
+.botereak-save-all-btn {
+  background: linear-gradient(135deg, var(--urrea), #C89C3F);
+  color: var(--ilun);
+  border: none;
+  border-radius: 50px;
+  padding: 9px 20px;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.botereak-save-all-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(184, 138, 60, 0.35);
+}
+.botereak-save-all-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Mobile: la barra flotante en formato más compacto */
+@media (max-width: 700px) {
+  .botereak-floating-bar {
+    bottom: 12px;
+    border-radius: 12px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .botereak-floating-info { font-size: 12.5px; }
+  .botereak-save-all-btn { padding: 8px 14px; font-size: 12.5px; }
+}

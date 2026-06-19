@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   setOverride,
   resetOverride,
@@ -27,11 +27,69 @@ const EMOJI_SUGGESTIONS = [
   '🍃','🌀','☁️','📜','🎲','🎯','🌪️','🌋','🦅','🐉','🐍','🧿',
 ]
 
+/** Snapshot de los campos editables de un poder para detectar cambios */
+type Snapshot = {
+  mode: 'auto' | 'manual'
+  manaCost: number
+  name: string
+  description: string
+  levelRequired: number
+  icon: string
+}
+
+function toSnapshot(p: EffectivePower): Snapshot {
+  return {
+    mode: p.effectiveMode,
+    manaCost: p.effectiveManaCost,
+    name: p.effectiveName,
+    description: p.effectiveDescription,
+    levelRequired: p.effectiveLevelRequired,
+    icon: p.effectiveIcon,
+  }
+}
+
+function snapshotsEqual(a: Snapshot, b: Snapshot): boolean {
+  return (
+    a.mode === b.mode &&
+    a.manaCost === b.manaCost &&
+    a.name === b.name &&
+    a.description === b.description &&
+    a.levelRequired === b.levelRequired &&
+    a.icon === b.icon
+  )
+}
+
 export default function BotereakEditor({ classroomId, groups: initial }: Props) {
   const [groups, setGroups] = useState<Group[]>(initial)
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
+  const [savedFlash, setSavedFlash] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  // Snapshot inmutable de cada poder TAL Y COMO ESTÁ EN BD (al cargar y tras
+  // cada guardado). Se usa para detectar si una card está "dirty".
+  const savedSnapshotRef = useRef<Map<string, Snapshot>>(
+    new Map(
+      initial.flatMap((g) => g.powers.map((p) => [p.id, toSnapshot(p)] as const))
+    )
+  )
+
+  // Mapa id → poder actual para acceso rápido
+  const allPowers = useMemo(
+    () =>
+      groups.flatMap((g) => g.powers.map((p) => ({ heroClass: g.heroClass, p }))),
+    [groups]
+  )
+
+  const dirtyIds = useMemo(() => {
+    const s = new Set<string>()
+    for (const { p } of allPowers) {
+      const saved = savedSnapshotRef.current.get(p.id)
+      if (!saved) continue
+      if (!snapshotsEqual(saved, toSnapshot(p))) s.add(p.id)
+    }
+    return s
+  }, [allPowers])
 
   function getOriginal(powerId: string, heroClass: HeroClass) {
     return POWERS_BY_CLASS[heroClass].find((p) => p.id === powerId)
@@ -46,54 +104,24 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
     })
   }
 
-  /**
-   * Guarda los campos efectivos como override. Si un campo coincide con el
-   * catálogo original, lo deja como null (no override). Si todos coinciden,
-   * el override entero se borra.
-   */
-  async function saveAll(p: EffectivePower, heroClass: HeroClass) {
-    const orig = getOriginal(p.id, heroClass)
-    if (!orig) return
-
-    setBusy(true)
-    setError(null)
-    const result = await setOverride({
-      classroomId,
-      powerId: p.id,
-      mode: orig.mode === p.effectiveMode ? null : p.effectiveMode,
-      manaCost: orig.manaCost === p.effectiveManaCost ? null : p.effectiveManaCost,
-      name: orig.name === p.effectiveName ? null : p.effectiveName,
-      description:
-        orig.description === p.effectiveDescription ? null : p.effectiveDescription,
-      levelRequired:
-        orig.levelRequired === p.effectiveLevelRequired ? null : p.effectiveLevelRequired,
-      icon: orig.icon === p.effectiveIcon ? null : p.effectiveIcon,
+  function setBusyFor(id: string, value: boolean) {
+    setBusy((prev) => {
+      const next = new Set(prev)
+      if (value) next.add(id)
+      else next.delete(id)
+      return next
     })
-    setBusy(false)
-    if (!result.success) setError(result.error ?? 'Errorea.')
   }
 
-  async function handleReset(p: EffectivePower, heroClass: HeroClass) {
-    if (!window.confirm('Berrezarri jatorrizko balioetara?')) return
-    setBusy(true)
-    setError(null)
-    const result = await resetOverride({ classroomId, powerId: p.id })
-    setBusy(false)
-    if (!result.success) {
-      setError(result.error ?? 'Errorea.')
-      return
-    }
-    const orig = getOriginal(p.id, heroClass)
-    if (!orig) return
-    updatePower(heroClass, p.id, {
-      effectiveMode: orig.mode,
-      effectiveManaCost: orig.manaCost,
-      effectiveName: orig.name,
-      effectiveDescription: orig.description,
-      effectiveLevelRequired: orig.levelRequired,
-      effectiveIcon: orig.icon,
-      isOverridden: false,
-    })
+  function flashSaved(id: string) {
+    setSavedFlash((prev) => new Set(prev).add(id))
+    setTimeout(() => {
+      setSavedFlash((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }, 1800)
   }
 
   function updatePower(
@@ -110,11 +138,109 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
               powers: g.powers.map((x) =>
                 x.id !== powerId
                   ? x
-                  : ({ ...x, ...patch, isOverridden: true } as EffectivePower)
+                  : ({ ...x, ...patch } as EffectivePower)
               ),
             }
       )
     )
+  }
+
+  /**
+   * Guarda los campos de un poder. Si todos coinciden con el catálogo, borra
+   * el override entero. Si no, hace upsert con TODOS los campos efectivos
+   * (no solo los que difieren del catálogo) — así no perdemos datos si el
+   * usuario revierte un campo a su valor original mientras otros siguen
+   * modificados.
+   */
+  async function handleSavePower(p: EffectivePower, heroClass: HeroClass) {
+    const orig = getOriginal(p.id, heroClass)
+    if (!orig) return
+
+    setError(null)
+    setBusyFor(p.id, true)
+
+    const sameMode = orig.mode === p.effectiveMode
+    const sameMana = orig.manaCost === p.effectiveManaCost
+    const sameName = orig.name === p.effectiveName
+    const sameDesc = orig.description === p.effectiveDescription
+    const sameLevel = orig.levelRequired === p.effectiveLevelRequired
+    const sameIcon = orig.icon === p.effectiveIcon
+
+    const allMatchCatalog =
+      sameMode && sameMana && sameName && sameDesc && sameLevel && sameIcon
+
+    let result
+    if (allMatchCatalog) {
+      // Si nada difiere del catálogo, mejor borrar el override entero
+      result = await resetOverride({ classroomId, powerId: p.id })
+    } else {
+      result = await setOverride({
+        classroomId,
+        powerId: p.id,
+        // Si un campo coincide con el catálogo, mandamos null para que se
+        // "limpie" de la fila (caerá al catálogo); el resto se guarda.
+        mode: sameMode ? null : p.effectiveMode,
+        manaCost: sameMana ? null : p.effectiveManaCost,
+        name: sameName ? null : p.effectiveName,
+        description: sameDesc ? null : p.effectiveDescription,
+        levelRequired: sameLevel ? null : p.effectiveLevelRequired,
+        icon: sameIcon ? null : p.effectiveIcon,
+      })
+    }
+
+    setBusyFor(p.id, false)
+    if (!result.success) {
+      setError(result.error ?? 'Errorea.')
+      return
+    }
+
+    // Actualizar snapshot: a partir de ahora estos valores son los "guardados"
+    savedSnapshotRef.current.set(p.id, toSnapshot(p))
+    // Marcar también isOverridden correctamente
+    updatePower(heroClass, p.id, { isOverridden: !allMatchCatalog })
+    flashSaved(p.id)
+  }
+
+  async function handleReset(p: EffectivePower, heroClass: HeroClass) {
+    if (!window.confirm('Berrezarri jatorrizko balioetara?')) return
+    setBusyFor(p.id, true)
+    setError(null)
+    const result = await resetOverride({ classroomId, powerId: p.id })
+    setBusyFor(p.id, false)
+    if (!result.success) {
+      setError(result.error ?? 'Errorea.')
+      return
+    }
+    const orig = getOriginal(p.id, heroClass)
+    if (!orig) return
+    const fresh: Partial<EffectivePower> = {
+      effectiveMode: orig.mode,
+      effectiveManaCost: orig.manaCost,
+      effectiveName: orig.name,
+      effectiveDescription: orig.description,
+      effectiveLevelRequired: orig.levelRequired,
+      effectiveIcon: orig.icon,
+      isOverridden: false,
+    }
+    updatePower(heroClass, p.id, fresh)
+    savedSnapshotRef.current.set(p.id, {
+      mode: orig.mode,
+      manaCost: orig.manaCost,
+      name: orig.name,
+      description: orig.description,
+      levelRequired: orig.levelRequired,
+      icon: orig.icon,
+    })
+    flashSaved(p.id)
+  }
+
+  async function handleSaveAll() {
+    setError(null)
+    for (const { p, heroClass } of allPowers) {
+      if (dirtyIds.has(p.id)) {
+        await handleSavePower(p, heroClass)
+      }
+    }
   }
 
   return (
@@ -136,12 +262,15 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
           <ul className="botereak-cards">
             {g.powers.map((p) => {
               const isOpen = expanded.has(p.id)
+              const isDirty = dirtyIds.has(p.id)
+              const isBusy = busy.has(p.id)
+              const isFlashing = savedFlash.has(p.id)
               return (
                 <li
                   key={p.id}
                   className={`botereak-card ${
                     p.isOverridden ? 'botereak-card-overridden' : ''
-                  }`}
+                  } ${isDirty ? 'botereak-card-dirty' : ''}`}
                 >
                   <button
                     type="button"
@@ -153,13 +282,24 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
                     <div className="botereak-card-text">
                       <span className="botereak-card-name">
                         {p.effectiveName}
-                        {p.isOverridden && (
+                        {p.isOverridden && !isDirty && (
                           <span className="botereak-card-badge">aldatuta</span>
+                        )}
+                        {isDirty && (
+                          <span className="botereak-card-badge botereak-card-badge-dirty">
+                            gorde gabe
+                          </span>
+                        )}
+                        {isFlashing && (
+                          <span className="botereak-card-badge botereak-card-badge-saved">
+                            ✓ gordeta
+                          </span>
                         )}
                       </span>
                       <span className="botereak-card-meta">
                         Mla {p.effectiveLevelRequired} · 🔮{' '}
-                        {p.effectiveManaCost} · {p.effectiveMode === 'manual' ? 'Baieztatu' : 'Auto'}
+                        {p.effectiveManaCost} ·{' '}
+                        {p.effectiveMode === 'manual' ? 'Baieztatu' : 'Auto'}
                       </span>
                     </div>
                     <span className="botereak-card-chev" aria-hidden="true">
@@ -180,7 +320,6 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
                                 effectiveIcon: e.target.value.slice(0, 4),
                               })
                             }
-                            onBlur={() => saveAll(p, g.heroClass)}
                             className="botereak-icon-input"
                             maxLength={4}
                           />
@@ -189,18 +328,17 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
                               <button
                                 key={emo}
                                 type="button"
-                                className="botereak-emoji-btn"
-                                onClick={() => {
+                                className={`botereak-emoji-btn ${
+                                  p.effectiveIcon === emo
+                                    ? 'botereak-emoji-btn-on'
+                                    : ''
+                                }`}
+                                onClick={() =>
                                   updatePower(g.heroClass, p.id, {
                                     effectiveIcon: emo,
                                   })
-                                  // guardar tras seleccionar
-                                  saveAll(
-                                    { ...p, effectiveIcon: emo },
-                                    g.heroClass
-                                  )
-                                }}
-                                disabled={busy}
+                                }
+                                disabled={isBusy}
                                 title={emo}
                               >
                                 {emo}
@@ -220,9 +358,8 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
                               effectiveName: e.target.value,
                             })
                           }
-                          onBlur={() => saveAll(p, g.heroClass)}
                           className="botereak-text-input"
-                          disabled={busy}
+                          disabled={isBusy}
                           maxLength={60}
                         />
                       </div>
@@ -236,9 +373,8 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
                               effectiveDescription: e.target.value,
                             })
                           }
-                          onBlur={() => saveAll(p, g.heroClass)}
                           className="botereak-textarea"
-                          disabled={busy}
+                          disabled={isBusy}
                           maxLength={240}
                           rows={2}
                         />
@@ -262,16 +398,13 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
                                   : Math.max(1, Math.min(50, n)),
                               })
                             }}
-                            onBlur={() => saveAll(p, g.heroClass)}
                             className="botereak-num-input"
-                            disabled={busy}
+                            disabled={isBusy}
                           />
                         </div>
 
                         <div className="botereak-field">
-                          <label className="botereak-label">
-                            Mana kostua
-                          </label>
+                          <label className="botereak-label">Mana kostua</label>
                           <input
                             type="number"
                             min={0}
@@ -285,33 +418,25 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
                                   : Math.max(0, Math.min(20, n)),
                               })
                             }}
-                            onBlur={() => saveAll(p, g.heroClass)}
                             className="botereak-num-input"
-                            disabled={busy}
+                            disabled={isBusy}
                           />
                         </div>
 
                         <div className="botereak-field">
-                          <label className="botereak-label">
-                            Baieztapena
-                          </label>
+                          <label className="botereak-label">Baieztapena</label>
                           <label className="botereak-toggle">
                             <input
                               type="checkbox"
                               checked={p.effectiveMode === 'manual'}
-                              onChange={(e) => {
-                                const newMode = e.target.checked
-                                  ? 'manual'
-                                  : 'auto'
+                              onChange={(e) =>
                                 updatePower(g.heroClass, p.id, {
-                                  effectiveMode: newMode,
+                                  effectiveMode: e.target.checked
+                                    ? 'manual'
+                                    : 'auto',
                                 })
-                                saveAll(
-                                  { ...p, effectiveMode: newMode },
-                                  g.heroClass
-                                )
-                              }}
-                              disabled={busy}
+                              }
+                              disabled={isBusy}
                             />
                             <span>
                               {p.effectiveMode === 'manual'
@@ -322,18 +447,26 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
                         </div>
                       </div>
 
-                      {p.isOverridden && (
-                        <div className="botereak-actions">
+                      <div className="botereak-actions">
+                        {p.isOverridden && (
                           <button
                             type="button"
                             className="botereak-reset-btn"
                             onClick={() => handleReset(p, g.heroClass)}
-                            disabled={busy}
+                            disabled={isBusy}
                           >
                             ↺ Jatorrizkoa berrezarri
                           </button>
-                        </div>
-                      )}
+                        )}
+                        <button
+                          type="button"
+                          className="botereak-save-btn"
+                          onClick={() => handleSavePower(p, g.heroClass)}
+                          disabled={isBusy || !isDirty}
+                        >
+                          {isBusy ? 'Gordetzen…' : 'Gorde aldaketak'}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </li>
@@ -342,6 +475,24 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
           </ul>
         </section>
       ))}
+
+      {/* Barra flotante: aparece si hay cambios pendientes en cualquier card */}
+      {dirtyIds.size > 0 && (
+        <div className="botereak-floating-bar" role="region">
+          <span className="botereak-floating-info">
+            <strong>{dirtyIds.size}</strong> botere{dirtyIds.size === 1 ? 'a' : 'k'}{' '}
+            gorde gabe
+          </span>
+          <button
+            type="button"
+            className="botereak-save-all-btn"
+            onClick={handleSaveAll}
+            disabled={busy.size > 0}
+          >
+            Gorde dena
+          </button>
+        </div>
+      )}
     </>
   )
 }
