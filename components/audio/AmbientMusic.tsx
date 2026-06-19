@@ -19,7 +19,7 @@ const PAD_NOTES = [
 
 export default function AmbientMusic() {
   const [enabled, setEnabled] = useState(false)
-  const [volume, setVolume] = useState(0.3)
+  const [volume, setVolume] = useState(0.55)
   const [open, setOpen] = useState(false)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const masterGainRef = useRef<GainNode | null>(null)
@@ -33,7 +33,12 @@ export default function AmbientMusic() {
     const storedVol = localStorage.getItem(STORAGE_KEY + '-volume')
     if (storedVol) {
       const v = parseFloat(storedVol)
-      if (!isNaN(v)) setVolume(Math.max(0, Math.min(1, v)))
+      if (!isNaN(v)) {
+        // Migración: si el usuario tenía volumen muy bajo (default antiguo),
+        // subirlo al nuevo default automáticamente.
+        const migrated = v < 0.4 ? 0.55 : v
+        setVolume(Math.max(0, Math.min(1, migrated)))
+      }
     }
   }, [])
 
@@ -68,7 +73,7 @@ export default function AmbientMusic() {
           .webkitAudioContext
       const ctx = new Ctor()
       const master = ctx.createGain()
-      master.gain.value = volume * 0.5
+      master.gain.value = volume
       master.connect(ctx.destination)
       audioCtxRef.current = ctx
       masterGainRef.current = master
@@ -154,7 +159,7 @@ export default function AmbientMusic() {
 
   useEffect(() => {
     if (masterGainRef.current) {
-      masterGainRef.current.gain.value = volume * 0.5
+      masterGainRef.current.gain.value = volume
     }
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEY + '-volume', String(volume))

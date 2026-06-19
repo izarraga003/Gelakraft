@@ -20,12 +20,12 @@ const BASE_SUGAAR_HP = 100
 const BASE_CLASS_HP = 100
 
 /** Daño base de un golpe normal a Sugaar (rango) */
-const NORMAL_HIT_MIN = 12
-const NORMAL_HIT_MAX = 18
+const NORMAL_HIT_MIN = 18
+const NORMAL_HIT_MAX = 26
 
 /** Daño de Sugaar a la clase cuando los alumnos fallan (rango) */
-const ENEMY_ATTACK_MIN = 18
-const ENEMY_ATTACK_MAX = 22
+const ENEMY_ATTACK_MIN = 24
+const ENEMY_ATTACK_MAX = 30
 
 /** Multiplicador de daño crítico */
 const CRIT_MULTIPLIER = 2
