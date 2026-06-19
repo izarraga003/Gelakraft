@@ -2399,21 +2399,47 @@ a {
   width: 100%;
   max-width: 540px;
   aspect-ratio: 1;
+  position: relative;
 }
-.sugaar-svg {
+.sugaar-image-frame {
   width: 100%;
   height: 100%;
-  display: block;
-}
-
-/* Animaciones */
-.sugaar-idle .sugaar-body {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(194, 70, 23, 0.5),
+    0 0 40px rgba(194, 70, 23, 0.35),
+    0 0 80px rgba(194, 70, 23, 0.2);
   animation: sugaar-breathe 4s ease-in-out infinite;
   transform-origin: center;
 }
+.sugaar-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+.sugaar-image-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(10, 6, 8, 0.45) 100%
+  );
+}
+
+/* Animaciones */
 @keyframes sugaar-breathe {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.025); }
+}
+.sugaar-idle .sugaar-image-frame {
+  animation: sugaar-breathe 4s ease-in-out infinite;
+  transform-origin: center;
 }
 .sugaar-hit {
   animation: sugaar-shake 0.5s;
@@ -2428,10 +2454,10 @@ a {
 }
 @keyframes sugaar-crit-shake {
   0%, 100% { transform: translateX(0) scale(1); filter: brightness(1); }
-  20% { transform: translateX(-20px) scale(0.97); filter: brightness(2) saturate(1.4); }
-  40% { transform: translateX(20px) scale(1.02); filter: brightness(2.5) saturate(1.5); }
-  60% { transform: translateX(-16px) scale(0.99); filter: brightness(1.8); }
-  80% { transform: translateX(16px) scale(1.01); filter: brightness(1.4); }
+  20% { transform: translateX(-20px) scale(0.97); filter: brightness(1.5) saturate(1.4); }
+  40% { transform: translateX(20px) scale(1.02); filter: brightness(1.8) saturate(1.5); }
+  60% { transform: translateX(-16px) scale(0.99); filter: brightness(1.5); }
+  80% { transform: translateX(16px) scale(1.01); filter: brightness(1.2); }
 }
 .sugaar-miss {
   animation: sugaar-dodge 0.5s ease-out;
@@ -8892,4 +8918,24 @@ button[class=""]:disabled {
   }
   .botereak-floating-info { font-size: 12.5px; }
   .botereak-save-all-btn { padding: 8px 14px; font-size: 12.5px; }
+}
+
+/* Descripción bloqueada en boterea automático */
+.botereak-textarea-locked {
+  opacity: 0.65;
+  background: rgba(184, 138, 60, 0.05);
+  cursor: not-allowed;
+  font-style: italic;
+}
+.botereak-locked-hint {
+  font-size: 11.5px;
+  color: var(--iluntze);
+  margin: 6px 2px 0;
+  line-height: 1.45;
+  font-family: var(--font-inter-stack);
+  opacity: 0.85;
+}
+.botereak-locked-hint strong {
+  color: var(--ilun);
+  font-weight: 600;
 }

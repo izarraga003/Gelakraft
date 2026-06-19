@@ -366,18 +366,36 @@ export default function BotereakEditor({ classroomId, groups: initial }: Props) 
 
                       <div className="botereak-field">
                         <label className="botereak-label">Deskribapena</label>
-                        <textarea
-                          value={p.effectiveDescription}
-                          onChange={(e) =>
-                            updatePower(g.heroClass, p.id, {
-                              effectiveDescription: e.target.value,
-                            })
-                          }
-                          className="botereak-textarea"
-                          disabled={isBusy}
-                          maxLength={240}
-                          rows={2}
-                        />
+                        {p.effectiveMode === 'auto' ? (
+                          <>
+                            <textarea
+                              value={p.effectiveDescription}
+                              className="botereak-textarea botereak-textarea-locked"
+                              disabled
+                              rows={2}
+                              readOnly
+                            />
+                            <p className="botereak-locked-hint">
+                              🔒 Boterea automatikoa denez, deskribapena ezin
+                              da aldatu (sistemak berak aplikatzen du
+                              eragina). Aldatu nahi baduzu, lehenbizi markatu
+                              <strong> Baieztapena</strong> behar duela.
+                            </p>
+                          </>
+                        ) : (
+                          <textarea
+                            value={p.effectiveDescription}
+                            onChange={(e) =>
+                              updatePower(g.heroClass, p.id, {
+                                effectiveDescription: e.target.value,
+                              })
+                            }
+                            className="botereak-textarea"
+                            disabled={isBusy}
+                            maxLength={240}
+                            rows={2}
+                          />
+                        )}
                       </div>
 
                       <div className="botereak-field-row">
