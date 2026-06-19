@@ -13,6 +13,7 @@ import MyTeam from '@/components/student/MyTeam'
 import MyPowers from '@/components/student/MyPowers'
 import AmbientMusic from '@/components/audio/AmbientMusic'
 import EmojiRain from '@/components/fun/EmojiRain'
+import { getEffectivePowersForStudent } from '@/lib/powers/overrides'
 
 export default async function StudentPanelPage() {
   const sessionStudent = await getStudent()
@@ -49,6 +50,13 @@ export default async function StudentPanelPage() {
   const safeAvatar = sanitizeAvatarConfig(student.avatar_config, 99)
   const level = xpToLevel(student.xp)
   const teamMembers = team?.members ?? []
+
+  // Cargar poderes con overrides aplicados (el alumno usa iron-session,
+  // así que llamamos a una RPC SECURITY DEFINER para bypassar RLS).
+  const effectivePowers = await getEffectivePowersForStudent(
+    student.classroom_id,
+    student.hero_class
+  )
 
   return (
     <div className="student-shell">
@@ -103,12 +111,12 @@ export default async function StudentPanelPage() {
         <div className="student-grid">
           <MyTeam team={team} currentStudentId={student.id} />
           <MyPowers
-            heroClass={student.hero_class}
             level={level}
             mana={student.mana}
             studentId={student.id}
             teamMembers={teamMembers}
             pendingRequests={pendingRequests}
+            powers={effectivePowers}
           />
         </div>
       </main>

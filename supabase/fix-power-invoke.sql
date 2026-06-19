@@ -1,11 +1,14 @@
 -- ============================================================
--- GELAKRAFT · FIX: get_power_effective
+-- GELAKRAFT · FIX: get_power_effective + list_overrides_for_classroom
 -- ============================================================
--- Resuelve modo y coste efectivos de un poder para un alumno concreto,
--- bypassando RLS (SECURITY DEFINER). Necesario porque el alumno se
--- autentica con iron-session, no con Supabase auth, así que un SELECT
--- directo a `students` y `power_overrides` devuelve vacío y aparece
--- "Ikaslea ez da aurkitu" al intentar usar un boterea.
+-- 1) get_power_effective(student_id, power_id) — resuelve modo y coste
+--    efectivos de un poder para un alumno concreto, bypassando RLS.
+-- 2) list_overrides_for_classroom(classroom_id) — devuelve TODOS los
+--    overrides del aula como JSON. SECURITY DEFINER para que el alumno
+--    (iron-session) pueda leerlos al cargar su panel.
+--
+-- Sin esto, el alumno no veía los costes actualizados cuando el profesor
+-- modificaba el coste de maná de un poder.
 -- ============================================================
 
 create or replace function public.get_power_effective(
@@ -44,3 +47,31 @@ $$;
 
 comment on function public.get_power_effective is
   'Devuelve modo y coste efectivos de un boterea para un alumno, aplicando overrides del aula. SECURITY DEFINER para que el alumno (sin auth.uid) pueda leer.';
+
+
+create or replace function public.list_overrides_for_classroom(
+  p_classroom_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_result jsonb;
+begin
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'power_id', power_id,
+      'mode', mode,
+      'mana_cost', mana_cost
+    )
+  ), '[]'::jsonb) into v_result
+  from public.power_overrides
+  where classroom_id = p_classroom_id;
+  return v_result;
+end;
+$$;
+
+comment on function public.list_overrides_for_classroom is
+  'Devuelve todos los overrides de un aula como array JSON. SECURITY DEFINER para que el alumno pueda leerlos.';

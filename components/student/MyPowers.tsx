@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getPowersForClass, type Power } from '@/lib/powers/catalog'
+import type { Power } from '@/lib/powers/catalog'
+import type { EffectivePower } from '@/lib/powers/overrides'
 import type { HeroClass } from '@/lib/students/hero-class'
 import { studentInvokePower } from '@/lib/powers/actions'
 import { sanitizeAvatarConfig, type AvatarConfig } from '@/lib/students/avatar'
@@ -28,28 +29,27 @@ type PendingRequest = {
 }
 
 type Props = {
-  heroClass: HeroClass
   level: number
   mana: number
   studentId: string
   teamMembers: TeamMember[]
   pendingRequests: PendingRequest[]
+  powers: EffectivePower[]
 }
 
 export default function MyPowers({
-  heroClass,
   level,
   mana,
   studentId,
   teamMembers,
   pendingRequests,
+  powers,
 }: Props) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
-  const [targetingPower, setTargetingPower] = useState<Power | null>(null)
+  const [targetingPower, setTargetingPower] = useState<EffectivePower | null>(null)
 
-  const powers = getPowersForClass(heroClass)
   const unlocked = powers.filter((p) => p.levelRequired <= level)
   const locked = powers.filter((p) => p.levelRequired > level)
 
@@ -75,14 +75,14 @@ export default function MyPowers({
     router.refresh()
   }
 
-  function handleClick(power: Power) {
+  function handleClick(power: EffectivePower) {
     if (busy) return
-    if (mana < power.manaCost) {
+    if (mana < power.effectiveManaCost) {
       setMessage({ kind: 'err', text: 'Mana nahikorik ez.' })
       return
     }
 
-    if (power.mode === 'auto') {
+    if (power.effectiveMode === 'auto' && power.mode === 'auto') {
       if (power.requiresTarget) {
         if (teamMatesExcludingSelf.length === 0) {
           setMessage({
@@ -109,10 +109,10 @@ export default function MyPowers({
         invoke(power)
       }
     } else {
-      // manual → confirmación
+      // manual (o auto con override a manual) → confirmación
       if (
         !window.confirm(
-          `${power.name} eskatu? Mana ${power.manaCost} erreserbatu egingo da. Irakasleak baieztatu beharko du.`
+          `${power.name} eskatu? Mana ${power.effectiveManaCost} erreserbatu egingo da. Irakasleak baieztatu beharko du.`
         )
       )
         return
@@ -165,8 +165,8 @@ export default function MyPowers({
           <h3 className="my-powers-group-title">Eskura</h3>
           <ul className="my-powers-list">
             {unlocked.map((p) => {
-              const canAfford = mana >= p.manaCost
-              const isAuto = p.mode === 'auto'
+              const canAfford = mana >= p.effectiveManaCost
+              const isAuto = p.effectiveMode === 'auto' && p.mode === 'auto'
               return (
                 <li
                   key={p.id}
@@ -196,11 +196,11 @@ export default function MyPowers({
                     disabled={busy || !canAfford}
                     title={
                       !canAfford
-                        ? `Mana ${p.manaCost} behar da`
+                        ? `Mana ${p.effectiveManaCost} behar da`
                         : 'Erabili'
                     }
                   >
-                    <span className="my-power-use-cost">🔮 {p.manaCost}</span>
+                    <span className="my-power-use-cost">🔮 {p.effectiveManaCost}</span>
                     <span>Erabili</span>
                   </button>
                 </li>

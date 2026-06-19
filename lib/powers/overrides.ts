@@ -71,6 +71,38 @@ export async function getEffectivePowers(
   })
 }
 
+/**
+ * Versión para el contexto del alumno (iron-session). Usa una RPC
+ * SECURITY DEFINER para bypassar RLS, ya que el alumno no tiene auth.uid().
+ */
+export async function getEffectivePowersForStudent(
+  classroomId: string,
+  heroClass: HeroClass
+): Promise<EffectivePower[]> {
+  const supabase = await createClient()
+  const { data } = await supabase.rpc('list_overrides_for_classroom', {
+    p_classroom_id: classroomId,
+  })
+  const arr = (data ?? []) as {
+    power_id: string
+    mode: 'auto' | 'manual' | null
+    mana_cost: number | null
+  }[]
+  const map: Record<string, { mode: 'auto' | 'manual' | null; mana_cost: number | null }> = {}
+  for (const o of arr) map[o.power_id] = { mode: o.mode, mana_cost: o.mana_cost }
+
+  const powers = POWERS_BY_CLASS[heroClass] ?? []
+  return powers.map((p) => {
+    const o = map[p.id]
+    return {
+      ...p,
+      effectiveMode: (o?.mode ?? p.mode) as 'auto' | 'manual',
+      effectiveManaCost: o?.mana_cost ?? p.manaCost,
+      isOverridden: !!o && (o.mode !== null || o.mana_cost !== null),
+    }
+  })
+}
+
 export async function setOverride(input: {
   classroomId: string
   powerId: string
