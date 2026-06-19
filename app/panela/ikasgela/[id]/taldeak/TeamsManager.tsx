@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   createTeam,
   renameTeam,
@@ -27,6 +27,8 @@ type Props = {
   initialUnassigned: SimpleStudent[]
 }
 
+const DRAG_THRESHOLD_PX = 5 // movimiento mínimo para iniciar drag (vs click)
+
 export default function TeamsManager({
   classroomId,
   initialTeams,
@@ -38,11 +40,27 @@ export default function TeamsManager({
   const [error, setError] = useState<string | null>(null)
   const [newTeamName, setNewTeamName] = useState('')
 
+  // Drag state
+  const dragStartRef = useRef<{
+    studentId: string
+    startX: number
+    startY: number
+  } | null>(null)
+  const [drag, setDrag] = useState<{
+    studentId: string
+    student: SimpleStudent
+    x: number
+    y: number
+  } | null>(null)
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null)
+
+  // ============== CRUD ==============
+
   async function handleCreate() {
     setError(null)
     const name = newTeamName.trim()
     if (!name) {
-      setError('Talde izena sartu behar duzu.')
+      setError('Talde izena idatzi behar duzu.')
       return
     }
     setBusy(true)
@@ -67,11 +85,17 @@ export default function TeamsManager({
       setError(result.error ?? 'Errorea.')
       return
     }
-    setTeams((prev) => prev.map((t) => (t.id === teamId ? { ...t, name: trimmed } : t)))
+    setTeams((prev) =>
+      prev.map((t) => (t.id === teamId ? { ...t, name: trimmed } : t))
+    )
   }
 
   async function handleDelete(teamId: string) {
-    if (!window.confirm('Ziur talde hau ezabatu nahi duzula? Ikasleak banatu gabe geratuko dira.'))
+    if (
+      !window.confirm(
+        'Ziur talde hau ezabatu nahi duzula? Ikasleak banatu gabe geratuko dira.'
+      )
+    )
       return
     setBusy(true)
     const result = await deleteTeam(teamId, classroomId)
@@ -80,7 +104,6 @@ export default function TeamsManager({
       setError(result.error ?? 'Errorea.')
       return
     }
-    // mover miembros a unassigned
     const team = teams.find((t) => t.id === teamId)
     if (team) {
       setUnassigned((prev) =>
@@ -99,42 +122,48 @@ export default function TeamsManager({
     setTeams((prev) => prev.filter((t) => t.id !== teamId))
   }
 
+  function findStudent(
+    studentId: string
+  ): { student: SimpleStudent; currentTeamId: string | null } | null {
+    for (const t of teams) {
+      const found = t.members.find((m) => m.id === studentId)
+      if (found) {
+        return {
+          student: {
+            id: found.id,
+            full_name: found.full_name,
+            hero_class: found.hero_class,
+            avatar_config: found.avatar_config,
+            xp: found.xp,
+          },
+          currentTeamId: t.id,
+        }
+      }
+    }
+    const u = unassigned.find((s) => s.id === studentId)
+    if (u) return { student: u, currentTeamId: null }
+    return null
+  }
+
   async function handleAssign(studentId: string, targetTeamId: string | null) {
+    const found = findStudent(studentId)
+    if (!found) return
+    if (found.currentTeamId === targetTeamId) return
+
+    const ms = found.student
+
     setBusy(true)
-    const result = await assignStudentToTeam(studentId, targetTeamId, classroomId)
+    const result = await assignStudentToTeam(
+      studentId,
+      targetTeamId,
+      classroomId
+    )
     setBusy(false)
     if (!result.success) {
       setError(result.error ?? 'Errorea.')
       return
     }
 
-    // Encontrar al alumno SINCRÓNICAMENTE antes de tocar el estado.
-    // Hacerlo dentro de los setters de React causaba un cierre asíncrono que
-    // dejaba `movedStudent = null` en la segunda actualización y el alumno
-    // desaparecía hasta refrescar.
-    let movedStudent: SimpleStudent | null = null
-    for (const t of teams) {
-      const found = t.members.find((m) => m.id === studentId)
-      if (found) {
-        movedStudent = {
-          id: found.id,
-          full_name: found.full_name,
-          hero_class: found.hero_class,
-          avatar_config: found.avatar_config,
-          xp: found.xp,
-        }
-        break
-      }
-    }
-    if (!movedStudent) {
-      const idx = unassigned.findIndex((s) => s.id === studentId)
-      if (idx >= 0) movedStudent = unassigned[idx]
-    }
-    if (!movedStudent) return // no debería pasar
-
-    const ms = movedStudent
-
-    // Quitar de donde estuviera
     setTeams((prev) =>
       prev.map((t) => ({
         ...t,
@@ -143,7 +172,6 @@ export default function TeamsManager({
     )
     setUnassigned((prev) => prev.filter((s) => s.id !== studentId))
 
-    // Insertarlo donde toque
     if (targetTeamId === null) {
       setUnassigned((prev) =>
         [...prev, ms].sort((a, b) => a.full_name.localeCompare(b.full_name))
@@ -164,13 +192,144 @@ export default function TeamsManager({
     }
   }
 
+  // ============== POINTER DRAG ==============
+
+  function onMemberPointerDown(e: React.PointerEvent, studentId: string) {
+    // Solo botón principal o touch
+    if (e.button !== 0 && e.pointerType === 'mouse') return
+    // No iniciar drag si se hace click en un botón/input dentro de la fila
+    const target = e.target as HTMLElement
+    if (
+      target.closest(
+        'button, input, select, .team-picker, .team-card-delete'
+      )
+    ) {
+      return
+    }
+    dragStartRef.current = {
+      studentId,
+      startX: e.clientX,
+      startY: e.clientY,
+    }
+  }
+
+  useEffect(() => {
+    function onMove(e: PointerEvent) {
+      const start = dragStartRef.current
+      if (!start) return
+
+      if (!drag) {
+        // No iniciado todavía: chequear umbral
+        const dx = e.clientX - start.startX
+        const dy = e.clientY - start.startY
+        if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return
+
+        const found = findStudent(start.studentId)
+        if (!found) {
+          dragStartRef.current = null
+          return
+        }
+        setDrag({
+          studentId: start.studentId,
+          student: found.student,
+          x: e.clientX,
+          y: e.clientY,
+        })
+        document.body.classList.add('teams-dragging-body')
+        return
+      }
+
+      // Ya arrastrando: actualizar posición
+      setDrag((d) =>
+        d
+          ? {
+              ...d,
+              x: e.clientX,
+              y: e.clientY,
+            }
+          : d
+      )
+
+      // Calcular target debajo del cursor
+      const el = document.elementFromPoint(
+        e.clientX,
+        e.clientY
+      ) as HTMLElement | null
+      const dropZone = el?.closest('[data-drop-zone]') as HTMLElement | null
+      const key = dropZone?.getAttribute('data-drop-zone') ?? null
+      setDragOverTarget(key)
+    }
+
+    function onUp(e: PointerEvent) {
+      const start = dragStartRef.current
+      dragStartRef.current = null
+
+      if (!start) return
+
+      const wasDragging = drag !== null
+      if (!wasDragging) return
+
+      setDrag(null)
+      setDragOverTarget(null)
+      document.body.classList.remove('teams-dragging-body')
+
+      // Buscar drop zone bajo el cursor
+      const el = document.elementFromPoint(
+        e.clientX,
+        e.clientY
+      ) as HTMLElement | null
+      const dropZone = el?.closest('[data-drop-zone]') as HTMLElement | null
+      const key = dropZone?.getAttribute('data-drop-zone')
+      if (!key) return
+      const targetTeamId = key === '__unassigned__' ? null : key
+      void handleAssign(start.studentId, targetTeamId)
+    }
+
+    function onCancel() {
+      dragStartRef.current = null
+      setDrag(null)
+      setDragOverTarget(null)
+      document.body.classList.remove('teams-dragging-body')
+    }
+
+    document.addEventListener('pointermove', onMove, { passive: true })
+    document.addEventListener('pointerup', onUp)
+    document.addEventListener('pointercancel', onCancel)
+    window.addEventListener('blur', onCancel)
+    return () => {
+      document.removeEventListener('pointermove', onMove)
+      document.removeEventListener('pointerup', onUp)
+      document.removeEventListener('pointercancel', onCancel)
+      window.removeEventListener('blur', onCancel)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drag, teams, unassigned])
+
+  // ============== RENDER ==============
+
   function renderTeamMemberRow(
-    m: { id: string; full_name: string; hero_class: HeroClass; avatar_config: Record<string, unknown>; xp: number },
+    m: {
+      id: string
+      full_name: string
+      hero_class: HeroClass
+      avatar_config: Record<string, unknown>
+      xp: number
+    },
     currentTeamId: string | null
   ) {
     const cfg = sanitizeAvatarConfig(m.avatar_config as AvatarConfig, 99)
+    const isDragging = drag?.studentId === m.id
+
     return (
-      <li key={m.id} className="team-member">
+      <li
+        key={m.id}
+        className={`team-member ${isDragging ? 'team-member-dragging' : ''}`}
+        onPointerDown={(e) => onMemberPointerDown(e, m.id)}
+        title="Arrastatu beste talde batera"
+      >
+        <span className="team-member-drag-handle" aria-hidden="true">
+          ⠿
+        </span>
         <span className="team-member-avatar">
           <AvatarRender config={cfg} size={42} />
         </span>
@@ -181,23 +340,12 @@ export default function TeamsManager({
           </span>
         </div>
         <span className="team-member-level">Mla {xpToLevel(m.xp)}</span>
-        <select
-          className="team-member-select"
-          value={currentTeamId ?? ''}
-          onChange={(e) => {
-            const v = e.target.value
-            handleAssign(m.id, v === '' ? null : v)
-          }}
+        <TeamPicker
+          teams={teams}
+          currentTeamId={currentTeamId}
           disabled={busy}
-          aria-label="Talde aldatu"
-        >
-          <option value="">— Talderik gabe —</option>
-          {teams.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
+          onChange={(newTeamId) => handleAssign(m.id, newTeamId)}
+        />
       </li>
     )
   }
@@ -232,15 +380,26 @@ export default function TeamsManager({
         </button>
       </section>
 
-      {/* Sin equipo */}
+      <p className="teams-drag-hint">
+        💡 Ikasleak <strong>arrastaka</strong> mugitu ditzakezu talde batetik
+        bestera (klikatu eta arrastatu izenetik), edo erabili goitibeherako
+        menua eskuinean.
+      </p>
+
+      {/* Sin equipo (zona drop) */}
       {unassigned.length > 0 && (
-        <section className="teams-unassigned">
+        <section
+          data-drop-zone="__unassigned__"
+          className={`teams-unassigned ${
+            dragOverTarget === '__unassigned__' ? 'teams-drop-active' : ''
+          }`}
+        >
           <header className="teams-unassigned-header">
             <h2 className="teams-unassigned-title">
               Talderik gabe ({unassigned.length})
             </h2>
             <p className="teams-unassigned-hint">
-              Esleitu ikasle hauei talde bat goitibeherako menutik.
+              Arrastatu hemendik talde batera, edo aukeratu menutik.
             </p>
           </header>
           <ul className="team-members teams-unassigned-list">
@@ -249,7 +408,7 @@ export default function TeamsManager({
         </section>
       )}
 
-      {/* Equipos */}
+      {/* Equipos (cada uno es zona drop) */}
       {teams.length === 0 ? (
         <div className="panel-empty-state">
           <p>Oraindik ez dago talderik sortu.</p>
@@ -260,14 +419,23 @@ export default function TeamsManager({
       ) : (
         <div className="teams-grid">
           {teams.map((t) => (
-            <article key={t.id} className="team-card">
+            <article
+              key={t.id}
+              data-drop-zone={t.id}
+              className={`team-card ${
+                dragOverTarget === t.id ? 'teams-drop-active' : ''
+              }`}
+            >
               <header className="team-card-header">
                 <input
                   type="text"
                   className="team-card-name-input"
                   defaultValue={t.name}
                   onBlur={(e) => {
-                    if (e.target.value.trim() && e.target.value.trim() !== t.name) {
+                    if (
+                      e.target.value.trim() &&
+                      e.target.value.trim() !== t.name
+                    ) {
                       handleRename(t.id, e.target.value)
                     }
                   }}
@@ -288,7 +456,9 @@ export default function TeamsManager({
               </header>
 
               {t.members.length === 0 ? (
-                <p className="team-empty">Hutsik.</p>
+                <p className="team-empty">
+                  Hutsik · arrastatu ikasle bat hona
+                </p>
               ) : (
                 <ul className="team-members">
                   {t.members.map((m) => renderTeamMemberRow(m, t.id))}
@@ -298,6 +468,137 @@ export default function TeamsManager({
           ))}
         </div>
       )}
+
+      {/* Ghost flotante mientras se arrastra */}
+      {drag && (
+        <div
+          className="teams-drag-ghost"
+          style={{
+            left: drag.x + 'px',
+            top: drag.y + 'px',
+          }}
+        >
+          <span className="teams-drag-ghost-avatar">
+            <AvatarRender
+              config={sanitizeAvatarConfig(
+                drag.student.avatar_config as AvatarConfig,
+                99
+              )}
+              size={36}
+            />
+          </span>
+          <span className="teams-drag-ghost-name">
+            {drag.student.full_name}
+          </span>
+        </div>
+      )}
     </>
+  )
+}
+
+// ============================================================
+// TeamPicker: dropdown custom
+// ============================================================
+
+function TeamPicker({
+  teams,
+  currentTeamId,
+  disabled,
+  onChange,
+}: {
+  teams: Team[]
+  currentTeamId: string | null
+  disabled: boolean
+  onChange: (newTeamId: string | null) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDocClick(e: MouseEvent) {
+      if (!wrapperRef.current?.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [open])
+
+  const currentTeam = teams.find((t) => t.id === currentTeamId)
+  const label = currentTeam ? currentTeam.name : '— Talderik gabe —'
+
+  return (
+    <div className="team-picker" ref={wrapperRef}>
+      <button
+        type="button"
+        className={`team-picker-btn ${open ? 'team-picker-btn-open' : ''}`}
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="team-picker-label">{label}</span>
+        <span className="team-picker-chev" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <ul className="team-picker-menu" role="listbox">
+          <li>
+            <button
+              type="button"
+              className={`team-picker-item ${
+                currentTeamId === null ? 'team-picker-item-active' : ''
+              }`}
+              onClick={() => {
+                onChange(null)
+                setOpen(false)
+              }}
+              role="option"
+              aria-selected={currentTeamId === null}
+            >
+              <span className="team-picker-item-dot team-picker-item-dot-none">
+                ✕
+              </span>
+              <span className="team-picker-item-text">— Talderik gabe —</span>
+            </button>
+          </li>
+          {teams.map((t) => {
+            const active = t.id === currentTeamId
+            return (
+              <li key={t.id}>
+                <button
+                  type="button"
+                  className={`team-picker-item ${
+                    active ? 'team-picker-item-active' : ''
+                  }`}
+                  onClick={() => {
+                    if (!active) onChange(t.id)
+                    setOpen(false)
+                  }}
+                  role="option"
+                  aria-selected={active}
+                >
+                  <span className="team-picker-item-dot">●</span>
+                  <span className="team-picker-item-text">{t.name}</span>
+                  <span className="team-picker-item-count">
+                    {t.members.length}
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
   )
 }

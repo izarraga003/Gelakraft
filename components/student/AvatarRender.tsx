@@ -80,21 +80,76 @@ export default function AvatarRender({ config, size = 100 }: Props) {
           <stop offset="50%" stopColor="#FF8B3A" />
           <stop offset="100%" stopColor="#C24617" />
         </linearGradient>
+        {/* Brillo general superior (highlight de cristal) */}
+        <linearGradient id="avatar-shine" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.35)" />
+          <stop offset="40%" stopColor="rgba(255,255,255,0.08)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </linearGradient>
+        {/* Viñeta inferior para profundidad */}
+        <radialGradient id="avatar-vignette" cx="50%" cy="90%" r="80%">
+          <stop offset="55%" stopColor="rgba(0,0,0,0)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.28)" />
+        </radialGradient>
+        {/* Highlight de mejilla derecha (luz lateral) */}
+        <radialGradient id="cheek-highlight" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.25)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
       </defs>
 
       {/* FONDO */}
       <rect width="100" height="100" fill={`url(#bg-grad-${config.bgColor})`} />
 
-      {/* CUELLO */}
+      {/* Pequeños puntos decorativos en el fondo (sparkles) */}
+      <circle cx="14" cy="18" r="1.6" fill="rgba(255,255,255,0.55)" />
+      <circle cx="86" cy="22" r="1.2" fill="rgba(255,255,255,0.45)" />
+      <circle cx="20" cy="80" r="1" fill="rgba(255,255,255,0.4)" />
+      <circle cx="82" cy="74" r="1.4" fill="rgba(255,255,255,0.5)" />
+
+      {/* CUELLO con sombra inferior */}
       <rect x="42" y="70" width="16" height="14" fill={skin} />
-      {/* HOMBROS base (puede taparse por outfit) */}
+      <rect x="42" y="78" width="16" height="6" fill="rgba(0,0,0,0.18)" />
+
+      {/* HOMBROS base */}
       <rect x="20" y="82" width="60" height="22" rx="6" fill="#2A2018" />
 
       {/* CARA */}
       <ellipse cx="50" cy="48" rx="22" ry="26" fill={skin} />
+      {/* Sombra suave del lado izquierdo (luz desde la derecha) */}
+      <ellipse cx="42" cy="52" rx="9" ry="18" fill="rgba(0,0,0,0.08)" />
+      {/* Highlight de cara */}
+      <ellipse
+        cx="58"
+        cy="42"
+        rx="10"
+        ry="14"
+        fill="url(#cheek-highlight)"
+      />
       {/* Orejas */}
       <ellipse cx="27" cy="50" rx="4" ry="6" fill={skin} />
       <ellipse cx="73" cy="50" rx="4" ry="6" fill={skin} />
+      {/* Sombras dentro de orejas */}
+      <ellipse cx="27.5" cy="51" rx="2" ry="3.5" fill="rgba(0,0,0,0.18)" />
+      <ellipse cx="72.5" cy="51" rx="2" ry="3.5" fill="rgba(0,0,0,0.18)" />
+
+      {/* MEJILLAS (siempre presentes para dar vida) */}
+      <ellipse
+        cx="36"
+        cy="56"
+        rx="4.5"
+        ry="3"
+        fill="#E8908F"
+        opacity="0.45"
+      />
+      <ellipse
+        cx="64"
+        cy="56"
+        rx="4.5"
+        ry="3"
+        fill="#E8908F"
+        opacity="0.45"
+      />
 
       {/* OJOS */}
       <Eyes type={config.eyes} />
@@ -102,17 +157,43 @@ export default function AvatarRender({ config, size = 100 }: Props) {
       {/* BOCA */}
       <Mouth type={config.mouth} />
 
-      {/* PELO (encima de cara, debajo de accesorios) */}
+      {/* PELO */}
       <Hair style={config.hairStyle} color={hair} />
 
-      {/* OUTFIT (encima de hombros base) */}
+      {/* OUTFIT */}
       <Outfit type={config.outfit} />
 
       {/* ACCESORIO */}
       {config.accessory && <Accessory type={config.accessory} />}
 
-      {/* MASCOTA */}
+      {/* Capa de brillo superior (solo afecta arriba) */}
+      <rect width="100" height="50" fill="url(#avatar-shine)" pointerEvents="none" />
+
+      {/* Viñeta inferior (solo bordes) */}
+      <rect width="100" height="100" fill="url(#avatar-vignette)" pointerEvents="none" />
+
+      {/* MASCOTA (encima de todo, brillante y bien visible) */}
       {config.pet && <Pet type={config.pet} />}
+
+      {/* Marco dorado */}
+      <rect
+        x="1"
+        y="1"
+        width="98"
+        height="98"
+        fill="none"
+        stroke="rgba(184, 138, 60, 0.85)"
+        strokeWidth="2"
+      />
+      <rect
+        x="3"
+        y="3"
+        width="94"
+        height="94"
+        fill="none"
+        stroke="rgba(255, 240, 200, 0.35)"
+        strokeWidth="1"
+      />
     </svg>
   )
 }
@@ -129,6 +210,9 @@ function Eyes({ type }: { type: string }) {
           <circle cx="59" cy="46" r="4" fill="#FFF" />
           <circle cx="41" cy="46" r="2.2" fill="#1F1A18" />
           <circle cx="59" cy="46" r="2.2" fill="#1F1A18" />
+          {/* Highlights brillantes */}
+          <circle cx="42.2" cy="44.6" r="0.9" fill="#FFF" />
+          <circle cx="60.2" cy="44.6" r="0.9" fill="#FFF" />
         </>
       )
     case 'cheerful':
@@ -142,6 +226,7 @@ function Eyes({ type }: { type: string }) {
       return (
         <>
           <circle cx="41" cy="46" r="2.5" fill="#1F1A18" />
+          <circle cx="41.8" cy="45" r="0.7" fill="#FFF" />
           <path d="M 55 47 Q 59 44 63 47" stroke="#1F1A18" strokeWidth="2" fill="none" strokeLinecap="round" />
         </>
       )
@@ -189,6 +274,8 @@ function Eyes({ type }: { type: string }) {
         <>
           <circle cx="41" cy="46" r="2.5" fill="#1F1A18" />
           <circle cx="59" cy="46" r="2.5" fill="#1F1A18" />
+          <circle cx="41.7" cy="45.2" r="0.7" fill="#FFF" />
+          <circle cx="59.7" cy="45.2" r="0.7" fill="#FFF" />
         </>
       )
   }
@@ -569,12 +656,22 @@ function Accessory({ type }: { type: string }) {
 }
 
 // ============================================================
-// MASCOTAS (esquina inferior derecha)
+// MASCOTAS (esquina inferior derecha, tamaño grande)
 // ============================================================
 function Pet({ type }: { type: string }) {
-  // Cada mascota ocupa una caja ~22x22 en (72, 72)
+  // Cada mascota dibujada sobre caja interna ~24×22. Con scale 1.55 ocupa
+  // ~37×34 px en el viewBox de 100×100 — claramente visible incluso a
+  // tamaños pequeños del avatar.
   return (
-    <g transform="translate(70, 72) scale(0.85)">
+    <g transform="translate(58, 62) scale(1.55)">
+      {/* Halo suave para destacar a la mascota sobre el outfit */}
+      <ellipse
+        cx="13"
+        cy="14"
+        rx="14"
+        ry="11"
+        fill="rgba(255, 255, 255, 0.4)"
+      />
       <PetShape type={type} />
     </g>
   )
