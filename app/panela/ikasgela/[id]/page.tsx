@@ -127,6 +127,18 @@ export default async function ClassroomDetailPage({
               <small>Ikasleen botereak onartu edo ukatu</small>
             </span>
           </Link>
+          <Link
+            href={`/proiektatu/${id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="classroom-nav-link"
+          >
+            <span className="classroom-nav-icon">🎥</span>
+            <span>
+              <strong>Proiektatu</strong>
+              <small>Pantaila handian erakusteko bertsioa (klasean)</small>
+            </span>
+          </Link>
         </section>
       )}
 

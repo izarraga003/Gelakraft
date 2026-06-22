@@ -1,0 +1,119 @@
+/* ============================================
+   GELAKRAFT · BASE 
+   Extraído automáticamente de globals.css.
+   ============================================ */
+
+/* ============================================
+   GELAKRAFT · DESIGN TOKENS
+   ============================================ */
+:root {
+  /* Paleta */
+  --ilun: #1B2730;
+  --ilun-deep: #0F1820;
+  --sugaar: #C24617;
+  --sutea: #E27A35;
+  --urrea: #B68A3E;
+  --urrea-light: #D4A85C;
+  --iluntze: #2C4759;
+  --argi: #EFE5D0;
+  --argi-warm: #E5D9BC;
+
+  /* Fuentes (vienen de next/font como CSS variables) */
+  --font-fraunces-stack: var(--font-fraunces), 'Fraunces', Georgia, serif;
+  --font-inter-stack: var(--font-inter), 'Inter', system-ui, sans-serif;
+}
+
+/* ============================================
+   BASE
+   ============================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-inter-stack);
+  background: var(--ilun);
+  color: var(--argi);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+}
+
+
+/* ============================================
+   FALLBACK GLOBAL: cualquier <button> sin clase
+   propia tendrá al menos un aspecto decente
+   ============================================ */
+button {
+  font-family: var(--font-inter-stack);
+}
+/* Botones SIN ninguna clase: estilo decente por defecto */
+button:not([class]),
+button[class=""] {
+  background: var(--ilun);
+  color: var(--argi);
+  border: 1px solid var(--ilun);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+button:not([class]):hover:not(:disabled),
+button[class=""]:hover:not(:disabled) {
+  background: var(--iluntze);
+}
+button:not([class]):disabled,
+button[class=""]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* ============================================
+   AJUSTES VARIOS: botones que pueden necesitar
+   refresh estético
+   ============================================ */
+.behavior-delete-btn,
+.patuak-delete,
+.ikasleak-action-btn,
+.team-card-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  transition: all 0.15s;
+}
+.behavior-delete-btn:hover:not(:disabled),
+.patuak-delete:hover:not(:disabled),
+.team-card-delete:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+/* Quick btns (cards) más planos y modernos */
+.student-quick-btn {
+  border-radius: 6px;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Bulk btns más sólidos */
+.bulk-btn {
+  border-radius: 6px;
+  font-family: var(--font-fraunces-stack);
+  letter-spacing: 0.02em;
+  transition: all 0.15s;
+}
+.bulk-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+

@@ -1,0 +1,235 @@
+/* ============================================
+   GELAKRAFT · REQUESTS 
+   Extraído automáticamente de globals.css.
+   ============================================ */
+
+/* ============================================
+   REQUESTS LIST: estilos de solicitudes
+   ============================================ */
+.requests-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.request-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--argi-warm);
+  border: 1.5px solid rgba(184, 138, 60, 0.25);
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.request-item:hover {
+  border-color: var(--urrea);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+.request-icon {
+  font-size: 30px;
+  width: 44px;
+  flex-shrink: 0;
+  text-align: center;
+  margin-top: 2px;
+}
+.request-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.request-line-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.request-student {
+  font-family: var(--font-fraunces-stack);
+  font-size: 15px;
+  color: var(--ilun);
+}
+.request-arrow {
+  color: var(--iluntze);
+  opacity: 0.6;
+}
+.request-power-name {
+  font-family: var(--font-fraunces-stack);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--sugaar);
+}
+.request-desc {
+  font-size: 13px;
+  color: var(--iluntze);
+  margin: 2px 0 4px;
+  line-height: 1.45;
+  font-style: italic;
+}
+.request-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--iluntze);
+  margin-top: 4px;
+}
+.request-target { font-style: italic; }
+.request-cost {
+  background: rgba(120, 71, 181, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #5F4A8E;
+  font-weight: 600;
+}
+.request-time {
+  opacity: 0.7;
+  margin-left: auto;
+}
+.request-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.request-approve-btn,
+.request-deny-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.request-approve-btn {
+  background: linear-gradient(135deg, #4F8B3A, #3A6B28);
+  color: white;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+.request-approve-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5F9D48, #4A7B30);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(79, 139, 58, 0.25);
+}
+.request-deny-btn {
+  background: white;
+  color: var(--sugaar);
+  border: 1.5px solid rgba(194, 70, 23, 0.4);
+}
+.request-deny-btn:hover:not(:disabled) {
+  background: rgba(194, 70, 23, 0.06);
+  border-color: var(--sugaar);
+}
+.request-approve-btn:disabled,
+.request-deny-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Mobile request item */
+@media (max-width: 700px) {
+  .request-item {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+  .request-icon {
+    align-self: center;
+  }
+  .request-actions {
+    width: 100%;
+  }
+  .request-approve-btn,
+  .request-deny-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+
+/* ============================================
+   MUSIC POPUP: ESTILO MODERNO
+   ============================================ */
+.music-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--argi);
+  border: 1.5px solid rgba(184, 138, 60, 0.3);
+  border-radius: 10px;
+  padding: 16px;
+  min-width: 240px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+}
+.music-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(184, 138, 60, 0.15);
+}
+.music-popup-title {
+  font-family: var(--font-fraunces-stack);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ilun);
+}
+.music-popup-toggle {
+  background: var(--ilun);
+  color: var(--argi);
+  border: 1px solid var(--ilun);
+  border-radius: 5px;
+  padding: 5px 14px;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.music-popup-toggle:hover {
+  background: var(--iluntze);
+}
+.music-popup-toggle-on {
+  background: linear-gradient(135deg, #4F8B3A, #3A6B28);
+  border-color: #3A6B28;
+}
+.music-popup-toggle-on:hover {
+  background: linear-gradient(135deg, #5F9D48, #4A7B30);
+}
+.music-popup-volume {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--iluntze);
+}
+.music-popup-volume > span:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.music-popup-volume-value {
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  color: var(--ilun);
+  font-variant-numeric: tabular-nums;
+}
+.music-volume-slider {
+  width: 100%;
+  cursor: pointer;
+  accent-color: var(--urrea);
+}
+

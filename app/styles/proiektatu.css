@@ -1,0 +1,403 @@
+/* ============================================
+   GELAKRAFT · PROIEKTATU (modo presentación aula)
+   ============================================
+   Diseñado para verse desde el fondo de un aula con proyector.
+   Tipografías grandes, fondos oscuros, colores vivos.
+   ============================================ */
+
+.proiektatu-shell {
+  min-height: 100vh;
+  background: radial-gradient(
+    ellipse at center top,
+    #1e2738 0%,
+    #0f141f 60%,
+    #060810 100%
+  );
+  color: var(--argi);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-inter-stack);
+}
+
+.proiektatu-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 18px 28px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(184, 138, 60, 0.3);
+}
+.proiektatu-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.proiektatu-header-center {
+  text-align: center;
+}
+.proiektatu-header-right {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.proiektatu-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(184, 138, 60, 0.3);
+  color: var(--argi);
+  text-decoration: none;
+  font-size: 18px;
+  transition: all 0.15s;
+}
+.proiektatu-back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(-2px);
+}
+.proiektatu-title {
+  font-family: var(--font-fraunces-stack);
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.proiektatu-clock {
+  font-family: var(--font-fraunces-stack);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--urrea);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+.proiektatu-icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(184, 138, 60, 0.3);
+  color: var(--argi);
+  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.proiektatu-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--urrea);
+}
+
+/* ============== PODIO TOP 3 ============== */
+.proiektatu-podium {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  padding: 24px 28px 16px;
+  align-items: end;
+}
+.proiektatu-podium-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 16px 22px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1.5px solid rgba(184, 138, 60, 0.35);
+  border-radius: 14px;
+  position: relative;
+  text-align: center;
+}
+.proiektatu-podium-1 {
+  border-color: rgba(255, 213, 61, 0.7);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 213, 61, 0.18),
+    rgba(255, 213, 61, 0.03)
+  );
+  box-shadow: 0 0 40px rgba(255, 213, 61, 0.25);
+  padding-top: 24px;
+  padding-bottom: 28px;
+}
+.proiektatu-podium-2 {
+  border-color: rgba(192, 200, 208, 0.55);
+}
+.proiektatu-podium-3 {
+  border-color: rgba(184, 138, 60, 0.55);
+}
+.proiektatu-podium-medal {
+  font-size: 38px;
+  line-height: 1;
+}
+.proiektatu-podium-avatar {
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(184, 138, 60, 0.6);
+  background: rgba(0, 0, 0, 0.3);
+}
+.proiektatu-podium-1 .proiektatu-podium-avatar {
+  border-color: rgba(255, 213, 61, 0.85);
+  border-width: 4px;
+}
+.proiektatu-podium-name {
+  font-family: var(--font-fraunces-stack);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--argi);
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.proiektatu-podium-1 .proiektatu-podium-name {
+  font-size: 22px;
+}
+.proiektatu-podium-meta {
+  font-size: 13px;
+  color: rgba(239, 229, 208, 0.75);
+  font-family: var(--font-inter-stack);
+  letter-spacing: 0.02em;
+}
+
+/* ============== GRID DE ALUMNOS ============== */
+.proiektatu-main {
+  flex: 1;
+  padding: 16px 28px 28px;
+}
+.proiektatu-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: rgba(239, 229, 208, 0.65);
+  font-style: italic;
+  font-size: 18px;
+}
+.proiektatu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.proiektatu-card {
+  display: flex;
+  gap: 14px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1.5px solid rgba(184, 138, 60, 0.28);
+  border-radius: 12px;
+  padding: 14px;
+  transition: all 0.3s;
+}
+.proiektatu-card-dead {
+  border-color: rgba(194, 70, 23, 0.7);
+  background: linear-gradient(
+    180deg,
+    rgba(194, 70, 23, 0.15),
+    rgba(194, 70, 23, 0.03)
+  );
+  animation: proiektatu-dead-pulse 2.5s ease-in-out infinite;
+}
+@keyframes proiektatu-dead-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(194, 70, 23, 0); }
+  50%      { box-shadow: 0 0 30px rgba(194, 70, 23, 0.35); }
+}
+
+.proiektatu-card-avatar {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: visible;
+}
+.proiektatu-card-avatar svg {
+  border-radius: 10px;
+  border: 2px solid rgba(184, 138, 60, 0.5);
+  display: block;
+}
+.proiektatu-card-dead-badge {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--sugaar);
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  font-family: var(--font-fraunces-stack);
+  letter-spacing: 0.04em;
+}
+
+.proiektatu-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.proiektatu-card-name {
+  font-family: var(--font-fraunces-stack);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--argi);
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.proiektatu-card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.proiektatu-card-tags .student-hero-class {
+  font-size: 9.5px !important;
+  padding: 2px 8px;
+}
+.proiektatu-card-team {
+  background: rgba(184, 138, 60, 0.18);
+  color: var(--urrea);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: var(--font-inter-stack);
+  font-weight: 600;
+}
+
+.proiektatu-card-level {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.proiektatu-card-level-label {
+  font-family: var(--font-fraunces-stack);
+  font-size: 11px;
+  color: rgba(239, 229, 208, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.proiektatu-card-level-num {
+  font-family: var(--font-fraunces-stack);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--urrea);
+  min-width: 22px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.proiektatu-card-xp-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.proiektatu-card-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--urrea), #E8C84B);
+  border-radius: 4px;
+  transition: width 0.6s ease-out;
+  box-shadow: 0 0 8px rgba(184, 138, 60, 0.45);
+}
+.proiektatu-card-xp-num {
+  font-size: 11.5px;
+  color: rgba(239, 229, 208, 0.75);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-inter-stack);
+  min-width: 38px;
+  text-align: right;
+}
+
+.proiektatu-card-stats {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 4px;
+}
+.proiektatu-card-hearts {
+  display: flex;
+  gap: 1px;
+}
+.proiektatu-card-heart {
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.45;
+  filter: grayscale(0.7);
+  transition: opacity 0.3s, filter 0.3s;
+}
+.proiektatu-card-heart-on {
+  opacity: 1;
+  filter: none;
+}
+.proiektatu-card-mana {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+.proiektatu-card-mana-pip {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(120, 71, 181, 0.25);
+  border: 1px solid rgba(120, 71, 181, 0.4);
+  transition: all 0.3s;
+}
+.proiektatu-card-mana-pip-on {
+  background: linear-gradient(135deg, #B488E8, #7847B5);
+  border-color: #B488E8;
+  box-shadow: 0 0 6px rgba(180, 136, 232, 0.6);
+}
+
+/* ============== FOOTER ============== */
+.proiektatu-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 28px;
+  background: rgba(0, 0, 0, 0.35);
+  border-top: 1px solid rgba(184, 138, 60, 0.2);
+  font-size: 11.5px;
+  color: rgba(239, 229, 208, 0.5);
+  font-family: var(--font-inter-stack);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ============== RESPONSIVE ============== */
+@media (max-width: 1100px) {
+  .proiektatu-podium { gap: 12px; padding: 18px 18px 12px; }
+  .proiektatu-podium-step { padding: 14px 10px 18px; }
+  .proiektatu-podium-medal { font-size: 28px; }
+  .proiektatu-podium-name { font-size: 15px; }
+  .proiektatu-podium-1 .proiektatu-podium-name { font-size: 17px; }
+}
+@media (max-width: 700px) {
+  .proiektatu-header { padding: 12px 14px; grid-template-columns: 1fr auto; }
+  .proiektatu-header-center { display: none; }
+  .proiektatu-title { font-size: 18px; }
+  .proiektatu-main { padding: 12px 14px 20px; }
+  .proiektatu-podium { grid-template-columns: 1fr; gap: 8px; padding: 12px 14px; }
+  .proiektatu-podium-1 { order: -1; }
+  .proiektatu-grid { grid-template-columns: 1fr; gap: 10px; }
+  .proiektatu-card { padding: 10px; gap: 10px; }
+  .proiektatu-card-avatar svg { width: 90px !important; height: 90px !important; }
+  .proiektatu-card-name { font-size: 15px; }
+  .proiektatu-footer { padding: 8px 14px; font-size: 10px; }
+}

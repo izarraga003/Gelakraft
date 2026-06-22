@@ -1,0 +1,197 @@
+/* ============================================
+   GELAKRAFT · RESPONSIVE 
+   Extraído automáticamente de globals.css.
+   ============================================ */
+
+/* ============================================
+   RESPONSIVE: pasada general mobile
+   ============================================ */
+@media (max-width: 700px) {
+  /* Konfiguratu */
+  .konfiguratu-content { padding: 16px 14px; }
+  .konfiguratu-title { font-size: 22px; }
+  .konfiguratu-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .konfiguratu-sidebar {
+    position: relative;
+    top: auto;
+    padding: 6px;
+  }
+  .konfiguratu-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 4px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .konfiguratu-nav-link {
+    white-space: nowrap;
+    padding: 8px 10px;
+    font-size: 12.5px;
+  }
+  .konfiguratu-nav-label { font-size: 12.5px; }
+  .konfiguratu-main {
+    padding: 18px 14px;
+  }
+  .konfiguratu-section-title { font-size: 18px; }
+  .konfiguratu-section-hint { font-size: 12.5px; }
+
+  /* Klase editor */
+  .klase-editor-row { grid-template-columns: 1fr; }
+  .grant-day-btn { min-width: 56px; padding: 6px 8px; }
+  .grant-day-short { font-size: 13px; }
+  .grant-day-full { font-size: 9px; }
+
+  /* Tabla ikasleak */
+  .ikasleak-table { font-size: 11.5px; }
+  .ikasleak-table thead th,
+  .ikasleak-table tbody td { padding: 6px 8px; }
+  .ikasleak-mono { font-size: 10px; padding: 1px 4px; }
+  .ikasleak-class-select { font-size: 10.5px; padding: 3px 4px; }
+  .ikasleak-action-btn { width: 26px; height: 26px; font-size: 10px; }
+
+  /* Botereak tabla */
+  .botereak-table { font-size: 11.5px; }
+  .botereak-icon { font-size: 18px; width: 30px; }
+  .botereak-desc { font-size: 10px; }
+  .botereak-mana-input { width: 48px; font-size: 12px; }
+  .botereak-toggle { font-size: 10.5px; gap: 4px; }
+  .botereak-toggle input { width: 14px; height: 14px; }
+
+  /* Panel principal del aula */
+  .panel-content { padding: 16px 14px; }
+  .panel-title { font-size: 22px !important; }
+  .classroom-nav { grid-template-columns: 1fr; gap: 8px; }
+  .classroom-nav-link { padding: 12px 14px; }
+  .classroom-nav-icon { font-size: 22px; }
+
+  /* StudentsGrid */
+  .students-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: 10px; }
+  .student-card { padding: 10px; }
+  .student-card-avatar svg { width: 60px !important; height: 60px !important; }
+  .student-card-name { font-size: 13px; }
+  .student-card-quick { gap: 4px; }
+  .student-quick-btn { font-size: 10.5px; padding: 4px 6px; }
+  .team-group { padding: 12px; }
+  .team-group-title { font-size: 14px; }
+  .team-group-select { font-size: 10.5px; padding: 4px 8px; }
+
+  /* Modal detalle alumno */
+  .student-detail-modal {
+    max-width: calc(100vw - 16px);
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .student-detail-header {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+  .student-detail-avatar { width: 80px; }
+  .student-detail-avatar svg { width: 80px !important; height: 80px !important; }
+  .student-detail-name { font-size: 17px; }
+  .student-detail-tabs { padding: 0 12px; flex-wrap: wrap; }
+  .student-detail-tab { padding: 9px 12px; font-size: 12px; }
+  .student-detail-body { padding: 14px; }
+
+  /* Bulk bar */
+  .bulk-bar { padding: 10px; gap: 8px; }
+  .bulk-btn { font-size: 11.5px; padding: 6px 10px; }
+  .bulk-bar-expansion { max-height: 220px; }
+
+  /* Panel del alumno */
+  .student-shell { font-size: 14px; }
+  .student-header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+  .student-logo-text { font-size: 14px; }
+  .student-user { gap: 8px; }
+  .student-user-name { font-size: 12.5px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .student-main { padding: 14px; }
+  .student-classroom-banner { padding: 14px; }
+  .student-classroom-name { font-size: 18px; }
+  .student-grid { grid-template-columns: 1fr !important; gap: 12px; }
+
+  /* Hero card del alumno */
+  .hero-card { flex-direction: column; padding: 18px; gap: 14px; }
+  .hero-card-avatar svg { width: 120px !important; height: 120px !important; }
+  .hero-card-name { font-size: 18px; }
+
+  /* My team */
+  .my-team-section, .my-powers-section { padding: 16px; }
+  .my-team-member { gap: 8px; padding: 6px 8px; }
+  .my-team-avatar { width: 40px; height: 40px; }
+  .my-team-avatar svg { width: 40px !important; height: 40px !important; }
+  .my-team-member-name { font-size: 12.5px; }
+  .my-power-card { flex-wrap: wrap; padding: 8px 10px; }
+  .my-power-icon { font-size: 18px; width: 28px; }
+  .my-power-name { font-size: 12.5px; }
+  .my-power-desc { font-size: 10.5px; }
+  .my-power-use-btn { padding: 5px 10px; font-size: 11px; }
+
+  /* Patua panel */
+  .patua-panel { padding: 14px; }
+  .patua-panel-icon { font-size: 28px; }
+  .patua-panel-title { font-size: 15px; }
+  .patua-list { grid-template-columns: 1fr; }
+  .patua-item { gap: 8px; padding: 6px 10px; }
+  .patua-item-avatar { width: 40px; height: 40px; }
+  .patua-item-avatar svg { width: 40px !important; height: 40px !important; }
+  .patua-item-name { font-size: 13px; }
+  .patua-execute-btn { font-size: 11px; padding: 6px 10px; }
+
+  /* Reveal modal */
+  .patua-reveal-modal { padding: 24px 20px; }
+  .patua-reveal-dice { font-size: 56px; }
+  .patua-reveal-text { font-size: 17px; }
+
+  /* Avatar builder */
+  .avatar-builder-modal {
+    max-width: calc(100vw - 16px);
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .avatar-builder-body {
+    flex-direction: column !important;
+    padding: 14px !important;
+  }
+  .avatar-builder-preview-stage svg { width: 160px !important; height: 160px !important; }
+
+  /* Behaviors editor: una sola columna en mobile (ya estaba con media 900) */
+
+  /* TeamsManager */
+  .teams-create-bar { flex-direction: column; gap: 8px; }
+  .teams-grid { grid-template-columns: 1fr; }
+
+  /* How it works */
+  .how-section { padding: 48px 16px; }
+  .how-grid { grid-template-columns: 1fr; gap: 12px; }
+  .how-card { padding: 18px; }
+  .how-card-icon { font-size: 32px; }
+  .how-card-title { font-size: 17px; }
+  .how-card-desc { font-size: 12.5px; }
+
+  /* Hero landing */
+  .hero-content { padding: 20px; }
+  .hero h1 { font-size: 32px !important; line-height: 1.15; }
+  .hero-sub { font-size: 14px; }
+  .hero-ctas { flex-direction: column; gap: 10px; }
+  .hero-mark { display: none; }
+
+  /* TopBar */
+  .top-bar { padding: 10px 14px; }
+}
+
+/* Tabletas pequeñas */
+@media (min-width: 700px) and (max-width: 1024px) {
+  .konfiguratu-layout { grid-template-columns: 180px 1fr; }
+  .konfiguratu-nav-link { padding: 8px 10px; font-size: 13px; }
+  .ikasleak-table { font-size: 12.5px; }
+  .students-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; }
+}
+
+/* Tablas muy estrechas: scroll horizontal */
+.ikasleak-table-wrapper,
+.botereak-table-wrapper {
+  -webkit-overflow-scrolling: touch;
+}
+
