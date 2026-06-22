@@ -235,3 +235,22 @@
   .auth-title { font-size: 28px; }
 }
 
+
+/* Spinner para recovery */
+.auth-spinner {
+  margin: 24px auto 0;
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(184, 138, 60, 0.2);
+  border-top-color: var(--urrea);
+  border-radius: 50%;
+  animation: auth-spin 0.9s linear infinite;
+}
+@keyframes auth-spin {
+  to { transform: rotate(360deg); }
+}
+.auth-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}

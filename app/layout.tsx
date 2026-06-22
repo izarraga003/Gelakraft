@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Fraunces, Inter } from 'next/font/google'
 import './globals.css'
+import AuthHashHandler from '@/components/auth/AuthHashHandler'
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -47,7 +48,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="eu" className={`${fraunces.variable} ${inter.variable}`}>
-      <body>{children}</body>
+      <body>
+        <AuthHashHandler />
+        {children}
+      </body>
     </html>
   )
 }
