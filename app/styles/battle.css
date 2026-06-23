@@ -331,47 +331,47 @@
   100% { opacity: 0.25; transform: rotate(15deg) scale(0.82); filter: grayscale(0.7); }
 }
 
-/* Animaciones internas del SVG */
-.sugaar-body {
-  transform-origin: 300px 350px;
+/* Animaciones internas del SVG (transform-origins recalculados al centro frontal) */
+.sugaar-body-coils {
+  transform-origin: 300px 380px;
   animation: sugaar-body-sway 6s ease-in-out infinite;
 }
 @keyframes sugaar-body-sway {
   0%, 100% { transform: rotate(0); }
-  50%      { transform: rotate(0.6deg); }
+  50%      { transform: rotate(0.5deg); }
 }
 .sugaar-head {
-  transform-origin: 380px 180px;
+  transform-origin: 300px 250px;
   animation: sugaar-head-bob 4.5s ease-in-out infinite;
 }
 @keyframes sugaar-head-bob {
   0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-4px); }
+  50%      { transform: translateY(-3px); }
 }
 .sugaar-tongue {
-  transform-origin: 245px 198px;
-  animation: sugaar-tongue-flick 2.4s ease-in-out infinite;
+  transform-origin: 300px 450px;
+  animation: sugaar-tongue-flick 2.6s ease-in-out infinite;
 }
 @keyframes sugaar-tongue-flick {
-  0%, 30%, 100% { transform: translateX(0) scaleX(1); opacity: 1; }
-  10%           { transform: translateX(-12px) scaleX(1.2); }
-  20%           { transform: translateX(-4px) scaleX(0.9); }
+  0%, 30%, 100% { transform: translateY(0) scaleY(1); opacity: 1; }
+  10%           { transform: translateY(8px) scaleY(1.15); }
+  20%           { transform: translateY(3px) scaleY(0.95); }
 }
 .sugaar-fire {
-  transform-origin: 200px 215px;
+  transform-origin: 300px 470px;
   animation: sugaar-fire-flicker 0.4s ease-in-out infinite alternate;
 }
 @keyframes sugaar-fire-flicker {
   0%   { transform: scaleX(1) scaleY(1); opacity: 0.95; }
-  100% { transform: scaleX(1.05) scaleY(0.95); opacity: 1; }
+  100% { transform: scaleX(1.04) scaleY(1.06); opacity: 1; }
 }
 .sugaar-attack .sugaar-fire {
   animation: sugaar-fire-roar 0.7s ease-out;
-  transform-origin: 200px 215px;
+  transform-origin: 300px 420px;
 }
 @keyframes sugaar-fire-roar {
   0%   { transform: scale(1); }
-  50%  { transform: scale(1.4) translateX(-30px); }
+  50%  { transform: scale(1.35); }
   100% { transform: scale(1); }
 }
 .sugaar-attack .sugaar-eyes {
