@@ -10,6 +10,7 @@ import {
 import { xpToLevel } from '@/lib/students/level'
 import { sanitizeAvatarConfig, type AvatarConfig } from '@/lib/students/avatar'
 import AvatarRender from '@/components/student/AvatarRender'
+import StudentHistory from '@/components/student/StudentHistory'
 import { getPowersForClass } from '@/lib/powers/catalog'
 import type { Behavior } from '@/lib/behaviors/actions'
 
@@ -395,7 +396,7 @@ function StudentDetailModal({
 }) {
   const level = xpToLevel(student.xp)
   const safeAvatar = sanitizeAvatarConfig(student.avatar_config, 99)
-  const [tab, setTab] = useState<'adjust' | 'behaviors' | 'powers'>('adjust')
+  const [tab, setTab] = useState<'adjust' | 'behaviors' | 'powers' | 'historiala'>('adjust')
 
   const [customXp, setCustomXp] = useState<number>(10)
   const [customHearts, setCustomHearts] = useState<number>(-1)
@@ -476,6 +477,13 @@ function StudentDetailModal({
             onClick={() => setTab('powers')}
           >
             Botereak
+          </button>
+          <button
+            type="button"
+            className={`student-detail-tab ${tab === 'historiala' ? 'student-detail-tab-active' : ''}`}
+            onClick={() => setTab('historiala')}
+          >
+            Historiala
           </button>
         </nav>
 
@@ -627,6 +635,13 @@ function StudentDetailModal({
                 </section>
               )}
             </div>
+          )}
+
+          {tab === 'historiala' && (
+            <StudentHistory
+              studentId={student.id}
+              studentName={student.full_name}
+            />
           )}
         </div>
 

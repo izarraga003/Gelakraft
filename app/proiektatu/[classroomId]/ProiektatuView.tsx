@@ -9,6 +9,7 @@ import type { HeroClass } from '@/lib/students/hero-class'
 import { HERO_CLASS_LABELS } from '@/lib/students/hero-class'
 
 const POLL_MS = 8000
+const FLASH_MS = 4500
 
 type StudentRow = {
   id: string
@@ -24,11 +25,20 @@ type StudentRow = {
   team: { id: string; name: string } | null
 }
 
+type FloatingChange = {
+  id: number
+  studentId: string
+  kind: 'xp' | 'hearts' | 'mana'
+  delta: number
+}
+
 type Props = {
   classroomId: string
   classroomName: string
   initialStudents: StudentRow[]
 }
+
+let floatingCounter = 0
 
 export default function ProiektatuView({
   classroomId,
@@ -41,6 +51,20 @@ export default function ProiektatuView({
   const [lastRefresh, setLastRefresh] = useState(() => Date.now())
   const [showRanking, setShowRanking] = useState(true)
   const pollRef = useRef<number | null>(null)
+
+  // Indicadores de cambios en vivo
+  const prevStudentsRef = useRef<Map<string, StudentRow>>(new Map())
+  const [flashing, setFlashing] = useState<Set<string>>(new Set())
+  const [floating, setFloating] = useState<FloatingChange[]>([])
+  const [pendingLevelUp, setPendingLevelUp] = useState<Set<string>>(new Set())
+
+  // Inicializar prevStudents la primera vez
+  useEffect(() => {
+    const m = new Map<string, StudentRow>()
+    for (const s of initialStudents) m.set(s.id, s)
+    prevStudentsRef.current = m
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Reloj
   useEffect(() => {
@@ -58,11 +82,11 @@ export default function ProiektatuView({
         if (!res.ok) return
         const json = await res.json()
         if (json.success) {
-          setStudents(json.students)
+          applyDiff(json.students as StudentRow[])
           setLastRefresh(Date.now())
         }
       } catch {
-        // Silencioso: si falla un poll no es crítico
+        // Silencioso
       }
     }
     pollRef.current = window.setInterval(refresh, POLL_MS)
@@ -70,6 +94,100 @@ export default function ProiektatuView({
       if (pollRef.current !== null) window.clearInterval(pollRef.current)
     }
   }, [classroomId])
+
+  /**
+   * Compara los datos nuevos con los previos y genera floating numbers +
+   * marca cards para pulsar. Después aplica el nuevo estado.
+   */
+  function applyDiff(next: StudentRow[]) {
+    const prev = prevStudentsRef.current
+    const newFloating: FloatingChange[] = []
+    const newFlashing = new Set<string>()
+    const newLevelUps = new Set<string>()
+
+    for (const s of next) {
+      const old = prev.get(s.id)
+      if (!old) continue
+      const dxp = s.xp - old.xp
+      const dh = s.hearts - old.hearts
+      const dm = s.mana - old.mana
+
+      if (dxp !== 0) {
+        newFloating.push({
+          id: ++floatingCounter,
+          studentId: s.id,
+          kind: 'xp',
+          delta: dxp,
+        })
+        newFlashing.add(s.id)
+        // ¿Subió de nivel?
+        if (xpToLevel(s.xp) > xpToLevel(old.xp)) {
+          newLevelUps.add(s.id)
+        }
+      }
+      if (dh !== 0) {
+        newFloating.push({
+          id: ++floatingCounter,
+          studentId: s.id,
+          kind: 'hearts',
+          delta: dh,
+        })
+        newFlashing.add(s.id)
+      }
+      if (dm !== 0) {
+        newFloating.push({
+          id: ++floatingCounter,
+          studentId: s.id,
+          kind: 'mana',
+          delta: dm,
+        })
+        newFlashing.add(s.id)
+      }
+    }
+
+    // Aplicar nuevo estado
+    setStudents(next)
+    const m = new Map<string, StudentRow>()
+    for (const s of next) m.set(s.id, s)
+    prevStudentsRef.current = m
+
+    if (newFloating.length > 0) {
+      setFloating((prev) => [...prev, ...newFloating])
+      // Eliminar los floating tras la animación
+      const ids = newFloating.map((f) => f.id)
+      window.setTimeout(() => {
+        setFloating((prev) => prev.filter((f) => !ids.includes(f.id)))
+      }, FLASH_MS)
+    }
+    if (newFlashing.size > 0) {
+      setFlashing((prev) => {
+        const next = new Set(prev)
+        newFlashing.forEach((id) => next.add(id))
+        return next
+      })
+      window.setTimeout(() => {
+        setFlashing((prev) => {
+          const next = new Set(prev)
+          newFlashing.forEach((id) => next.delete(id))
+          return next
+        })
+      }, FLASH_MS)
+    }
+    if (newLevelUps.size > 0) {
+      setPendingLevelUp((prev) => {
+        const next = new Set(prev)
+        newLevelUps.forEach((id) => next.add(id))
+        return next
+      })
+      window.setTimeout(() => {
+        setPendingLevelUp((prev) => {
+          const next = new Set(prev)
+          newLevelUps.forEach((id) => next.delete(id))
+          return next
+        })
+      }, FLASH_MS + 600)
+    }
+  }
 
   // Fullscreen
   useEffect(() => {
@@ -98,6 +216,13 @@ export default function ProiektatuView({
     hour: '2-digit',
     minute: '2-digit',
   })
+
+  // Indexar floating por studentId
+  const floatingByStudent: Record<string, FloatingChange[]> = {}
+  for (const f of floating) {
+    if (!floatingByStudent[f.studentId]) floatingByStudent[f.studentId] = []
+    floatingByStudent[f.studentId].push(f)
+  }
 
   return (
     <div className="proiektatu-shell">
@@ -151,7 +276,13 @@ export default function ProiektatuView({
         ) : (
           <div className="proiektatu-grid">
             {students.map((s) => (
-              <StudentCard key={s.id} student={s} />
+              <StudentCard
+                key={s.id}
+                student={s}
+                flashing={flashing.has(s.id)}
+                leveledUp={pendingLevelUp.has(s.id)}
+                changes={floatingByStudent[s.id] ?? []}
+              />
             ))}
           </div>
         )}
@@ -181,10 +312,7 @@ function PodiumStep({
   student: StudentRow
   place: 1 | 2 | 3
 }) {
-  const cfg = sanitizeAvatarConfig(
-    student.avatar_config as AvatarConfig,
-    99
-  )
+  const cfg = sanitizeAvatarConfig(student.avatar_config as AvatarConfig, 99)
   const level = xpToLevel(student.xp)
   const medals = ['🥇', '🥈', '🥉']
   return (
@@ -201,11 +329,18 @@ function PodiumStep({
   )
 }
 
-function StudentCard({ student }: { student: StudentRow }) {
-  const cfg = sanitizeAvatarConfig(
-    student.avatar_config as AvatarConfig,
-    99
-  )
+function StudentCard({
+  student,
+  flashing,
+  leveledUp,
+  changes,
+}: {
+  student: StudentRow
+  flashing: boolean
+  leveledUp: boolean
+  changes: FloatingChange[]
+}) {
+  const cfg = sanitizeAvatarConfig(student.avatar_config as AvatarConfig, 99)
   const lp = levelProgress(student.xp)
 
   const heartsArr = Array.from({ length: student.max_hearts }, (_, i) => i)
@@ -215,12 +350,17 @@ function StudentCard({ student }: { student: StudentRow }) {
     <article
       className={`proiektatu-card ${
         student.pending_death ? 'proiektatu-card-dead' : ''
+      } ${flashing ? 'proiektatu-card-flash' : ''} ${
+        leveledUp ? 'proiektatu-card-levelup' : ''
       }`}
     >
       <div className="proiektatu-card-avatar">
         <AvatarRender config={cfg} size={130} />
         {student.pending_death && (
           <div className="proiektatu-card-dead-badge">🎲 patua zain</div>
+        )}
+        {leveledUp && (
+          <div className="proiektatu-card-levelup-badge">⬆ LEVEL UP!</div>
         )}
       </div>
 
@@ -272,6 +412,38 @@ function StudentCard({ student }: { student: StudentRow }) {
           </div>
         </div>
       </div>
+
+      {/* Floating numbers de cambios */}
+      {changes.length > 0 && (
+        <div className="proiektatu-floats" aria-hidden="true">
+          {changes.map((c, idx) => {
+            const sign = c.delta > 0 ? '+' : ''
+            const label =
+              c.kind === 'xp'
+                ? `${sign}${c.delta} XP`
+                : c.kind === 'hearts'
+                ? `${sign}${c.delta} ❤️`
+                : `${sign}${c.delta} 🔮`
+            const variant =
+              c.delta > 0
+                ? c.kind === 'hearts'
+                  ? 'gain-hearts'
+                  : c.kind === 'mana'
+                  ? 'gain-mana'
+                  : 'gain-xp'
+                : 'loss'
+            return (
+              <span
+                key={c.id}
+                className={`proiektatu-float proiektatu-float-${variant}`}
+                style={{ animationDelay: `${idx * 0.12}s` }}
+              >
+                {label}
+              </span>
+            )
+          })}
+        </div>
+      )}
     </article>
   )
 }

@@ -266,44 +266,26 @@
   max-width: 540px;
   aspect-ratio: 1;
   position: relative;
-}
-.sugaar-image-frame {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   box-shadow:
-    0 0 0 1px rgba(194, 70, 23, 0.5),
-    0 0 40px rgba(194, 70, 23, 0.35),
-    0 0 80px rgba(194, 70, 23, 0.2);
-  animation: sugaar-breathe 4s ease-in-out infinite;
-  transform-origin: center;
+    0 0 0 1px rgba(194, 70, 23, 0.4),
+    0 0 50px rgba(194, 70, 23, 0.35),
+    0 0 100px rgba(194, 70, 23, 0.18);
+  background: #0a0608;
 }
-.sugaar-image {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover;
-  object-position: center top;
+.sugaar-svg {
   display: block;
-}
-.sugaar-image-vignette {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 50%,
-    rgba(10, 6, 8, 0.45) 100%
-  );
+  width: 100%;
+  height: 100%;
 }
 
-/* Animaciones */
+/* Animaciones por estado (aplicadas al contenedor) */
 @keyframes sugaar-breathe {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.025); }
+  50%      { transform: scale(1.012); }
 }
-.sugaar-idle .sugaar-image-frame {
+.sugaar-idle {
   animation: sugaar-breathe 4s ease-in-out infinite;
   transform-origin: center;
 }
@@ -312,41 +294,92 @@
 }
 @keyframes sugaar-shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-12px); }
-  75% { transform: translateX(12px); }
+  20%      { transform: translateX(-12px) rotate(-1deg); }
+  60%      { transform: translateX(14px) rotate(1deg); }
 }
 .sugaar-crit {
-  animation: sugaar-crit-shake 0.7s;
+  animation: sugaar-crit-shake 0.75s;
 }
 @keyframes sugaar-crit-shake {
   0%, 100% { transform: translateX(0) scale(1); filter: brightness(1); }
-  20% { transform: translateX(-20px) scale(0.97); filter: brightness(1.5) saturate(1.4); }
-  40% { transform: translateX(20px) scale(1.02); filter: brightness(1.8) saturate(1.5); }
-  60% { transform: translateX(-16px) scale(0.99); filter: brightness(1.5); }
-  80% { transform: translateX(16px) scale(1.01); filter: brightness(1.2); }
+  15%      { transform: translateX(-22px) scale(0.97); filter: brightness(1.6) saturate(1.4); }
+  35%      { transform: translateX(20px) scale(1.04); filter: brightness(2) saturate(1.5); }
+  55%      { transform: translateX(-16px) scale(0.99); filter: brightness(1.6); }
+  75%      { transform: translateX(16px) scale(1.02); filter: brightness(1.3); }
 }
 .sugaar-miss {
-  animation: sugaar-dodge 0.5s ease-out;
+  animation: sugaar-dodge 0.55s ease-out;
 }
 @keyframes sugaar-dodge {
-  0% { transform: translateX(0); }
-  50% { transform: translateX(60px) skewX(-8deg); }
-  100% { transform: translateX(0); }
+  0%   { transform: translateX(0) skewX(0); }
+  50%  { transform: translateX(60px) skewX(-8deg); }
+  100% { transform: translateX(0) skewX(0); }
 }
 .sugaar-attack {
-  animation: sugaar-attack-flash 0.7s;
+  animation: sugaar-attack-pulse 0.75s;
 }
-@keyframes sugaar-attack-flash {
-  0%, 100% { transform: scale(1); filter: brightness(1); }
-  20% { transform: scale(1.08); filter: brightness(1.4) hue-rotate(-15deg); }
-  50% { transform: scale(0.95); filter: brightness(1.2) hue-rotate(-15deg); }
+@keyframes sugaar-attack-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1) saturate(1); }
+  25%      { transform: scale(1.07); filter: brightness(1.5) saturate(1.6); }
+  55%      { transform: scale(0.96); filter: brightness(1.25) saturate(1.4); }
 }
 .sugaar-defeated {
-  animation: sugaar-die 1.2s ease-out forwards;
+  animation: sugaar-die 1.4s ease-out forwards;
 }
 @keyframes sugaar-die {
-  0% { opacity: 1; transform: rotate(0); }
-  100% { opacity: 0.25; transform: rotate(15deg) scale(0.85); filter: grayscale(0.7); }
+  0%   { opacity: 1; transform: rotate(0) scale(1); filter: none; }
+  100% { opacity: 0.25; transform: rotate(15deg) scale(0.82); filter: grayscale(0.7); }
+}
+
+/* Animaciones internas del SVG */
+.sugaar-body {
+  transform-origin: 300px 350px;
+  animation: sugaar-body-sway 6s ease-in-out infinite;
+}
+@keyframes sugaar-body-sway {
+  0%, 100% { transform: rotate(0); }
+  50%      { transform: rotate(0.6deg); }
+}
+.sugaar-head {
+  transform-origin: 380px 180px;
+  animation: sugaar-head-bob 4.5s ease-in-out infinite;
+}
+@keyframes sugaar-head-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+.sugaar-tongue {
+  transform-origin: 245px 198px;
+  animation: sugaar-tongue-flick 2.4s ease-in-out infinite;
+}
+@keyframes sugaar-tongue-flick {
+  0%, 30%, 100% { transform: translateX(0) scaleX(1); opacity: 1; }
+  10%           { transform: translateX(-12px) scaleX(1.2); }
+  20%           { transform: translateX(-4px) scaleX(0.9); }
+}
+.sugaar-fire {
+  transform-origin: 200px 215px;
+  animation: sugaar-fire-flicker 0.4s ease-in-out infinite alternate;
+}
+@keyframes sugaar-fire-flicker {
+  0%   { transform: scaleX(1) scaleY(1); opacity: 0.95; }
+  100% { transform: scaleX(1.05) scaleY(0.95); opacity: 1; }
+}
+.sugaar-attack .sugaar-fire {
+  animation: sugaar-fire-roar 0.7s ease-out;
+  transform-origin: 200px 215px;
+}
+@keyframes sugaar-fire-roar {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.4) translateX(-30px); }
+  100% { transform: scale(1); }
+}
+.sugaar-attack .sugaar-eyes {
+  animation: sugaar-eyes-glow 0.7s ease-in-out;
+}
+@keyframes sugaar-eyes-glow {
+  0%, 100% { filter: url(#eye-glow); }
+  50%      { filter: url(#eye-glow) brightness(2); }
 }
 
 /* Borde rojo cuando Sugaar ataca */
