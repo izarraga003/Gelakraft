@@ -88,14 +88,16 @@ export default function StudentLoginPage() {
             {loading ? 'Sartzen…' : 'Sartu'}
           </button>
         </form>
-
-        <p className="auth-footer">
-          Irakaslea zara?{' '}
-          <Link href="/saioa-hasi" className="auth-link">
-            Hemen sartu
-          </Link>
-        </p>
       </div>
+
+      <Link href="/saioa-hasi" className="auth-role-switch">
+        <span className="auth-role-switch-icon" aria-hidden="true">🧙</span>
+        <span className="auth-role-switch-text">
+          <span className="auth-role-switch-label">Irakaslea zara?</span>
+          <span className="auth-role-switch-action">Hemen sartu</span>
+        </span>
+        <span className="auth-role-switch-arrow" aria-hidden="true">→</span>
+      </Link>
     </main>
   )
 }
