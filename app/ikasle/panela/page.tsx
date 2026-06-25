@@ -14,6 +14,8 @@ import MyPowers from '@/components/student/MyPowers'
 import AmbientMusic from '@/components/audio/AmbientMusic'
 import EmojiRain from '@/components/fun/EmojiRain'
 import { getEffectivePowersForStudent } from '@/lib/powers/overrides'
+import { createServiceClient } from '@/lib/supabase/service'
+import StudentMissionsSection from '@/components/missions/StudentMissionsSection'
 
 export default async function StudentPanelPage() {
   const sessionStudent = await getStudent()
@@ -57,6 +59,18 @@ export default async function StudentPanelPage() {
     student.classroom_id,
     student.hero_class
   )
+
+  // Misiones activas del aula
+  const serviceClient = createServiceClient()
+  const { data: missionsData } = await serviceClient.rpc('get_student_missions', {
+    p_student_id: student.id,
+  })
+  const activeMissions = (missionsData ?? []) as Array<{
+    id: string
+    name: string
+    description: string
+    background_id: string
+  }>
 
   return (
     <div className="student-shell">
@@ -119,6 +133,10 @@ export default async function StudentPanelPage() {
             powers={effectivePowers}
           />
         </div>
+
+        {activeMissions.length > 0 && (
+          <StudentMissionsSection missions={activeMissions} />
+        )}
       </main>
     </div>
   )

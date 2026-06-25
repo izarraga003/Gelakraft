@@ -140,6 +140,16 @@ export default async function ClassroomDetailPage({
               <small>Pantaila handian erakusteko bertsioa (klasean)</small>
             </span>
           </Link>
+          <Link
+            href={`/panela/ikasgela/${id}/misioak`}
+            className="classroom-nav-link"
+          >
+            <span className="classroom-nav-icon">🗺️</span>
+            <span>
+              <strong>Misioak</strong>
+              <small>Abentura mapak ikasleentzat sortu</small>
+            </span>
+          </Link>
         </section>
       )}
 

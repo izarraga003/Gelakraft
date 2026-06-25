@@ -47,5 +47,8 @@
 /* 13. Modo proyección (vista aula a pantalla completa) */
 @import './styles/proiektatu.css';
 
-/* 14. Responsive: media queries globales — al final para que ganen prioridad */
+/* 14. Misioak (mapas de aventura con nodos) */
+@import './styles/missions.css';
+
+/* 15. Responsive: media queries globales — al final para que ganen prioridad */
 @import './styles/responsive.css';
