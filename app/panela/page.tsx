@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { countPendingReviewsByClassroom } from '@/lib/missions/extra-actions'
 import EmptyState from '@/components/ui/EmptyState'
+
+export const dynamic = 'force-dynamic'
 
 const STAGE_LABELS: Record<string, string> = {
   lehen: 'Lehen Hezkuntza',
@@ -24,20 +27,17 @@ export default async function PanelPage() {
 
   const classroomList = classrooms ?? []
   const hasClassrooms = classroomList.length > 0
-
-  // Contar pendientes (solicitudes de poderes + patuak por ejecutar) por aula.
-  // Hacemos dos queries con group-by manual a través de los IDs disponibles.
   const classroomIds = classroomList.map((c) => c.id)
+
+  // Conteos pendientes: power_requests + patuak + misioak revisar
   const pendingByClassroom: Record<string, number> = {}
 
   if (classroomIds.length > 0) {
-    // Power requests pending
     const { data: pendingPowers } = await supabase
       .from('power_requests')
       .select('classroom_id')
       .in('classroom_id', classroomIds)
       .eq('status', 'pending')
-
     if (pendingPowers) {
       for (const row of pendingPowers) {
         pendingByClassroom[row.classroom_id] =
@@ -45,18 +45,22 @@ export default async function PanelPage() {
       }
     }
 
-    // Patuak: alumnos con pending_death = true cuentan como pendiente
     const { data: pendingDeath } = await supabase
       .from('students')
       .select('classroom_id')
       .in('classroom_id', classroomIds)
       .eq('pending_death', true)
-
     if (pendingDeath) {
       for (const row of pendingDeath) {
         pendingByClassroom[row.classroom_id] =
           (pendingByClassroom[row.classroom_id] ?? 0) + 1
       }
+    }
+
+    // Misiones: revisiones pendientes por aula
+    const missionsReviews = await countPendingReviewsByClassroom(classroomIds)
+    for (const [cId, count] of Object.entries(missionsReviews)) {
+      pendingByClassroom[cId] = (pendingByClassroom[cId] ?? 0) + count
     }
   }
 
@@ -101,8 +105,7 @@ export default async function PanelPage() {
                         className="panel-classroom-pending"
                         title={`${pending} zain dagoen ekintza`}
                       >
-                        {pending}{' '}
-                        {pending === 1 ? 'zain' : 'zain'}
+                        {pending} zain
                       </span>
                     )}
                   </div>

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import MissionMapBackground from '@/components/missions/MissionMapBackground'
 import type { MissionMapId } from '@/lib/missions/maps'
 import { submitStudentNode } from '@/lib/missions/student-actions'
+import MissionVictoryOverlay from '@/components/missions/MissionVictoryOverlay'
 
 type Mission = {
   id: string
@@ -52,14 +53,59 @@ type DetailData = {
   progress: Progress[]
 }
 
+type SubmitResponse = {
+  success: boolean
+  status?: string
+  completion?: null | {
+    completed: boolean
+    already?: boolean
+    mission_name?: string
+    final_xp?: number
+    final_hearts?: number
+    final_mana?: number
+  }
+  unlocked?: Array<{ id: string; title: string }>
+  rewards?: { xp: number; hearts: number; mana: number }
+  error?: string
+}
+
 type Props = {
   studentId: string
   initialData: DetailData
 }
 
+type FloatingReward = {
+  id: number
+  nodeId: string
+  text: string
+  variant: 'gain' | 'loss'
+}
+
+type Toast = {
+  id: number
+  kind: 'unlocked' | 'completed'
+  message: string
+}
+
 export default function StudentMissionView({ studentId, initialData }: Props) {
   const [data, setData] = useState<DetailData>(initialData)
   const [openNode, setOpenNode] = useState<Node | null>(null)
+  const [floats, setFloats] = useState<FloatingReward[]>([])
+  const [toasts, setToasts] = useState<Toast[]>([])
+  const [victory, setVictory] = useState<{
+    name: string
+    xp: number
+    hearts: number
+    mana: number
+  } | null>(null)
+  const [completionFlashNodeId, setCompletionFlashNodeId] = useState<string | null>(null)
+
+  // Para no mostrar el overlay si ya estaba completada al entrar
+  const alreadyCompletedRef = useRef<boolean>(
+    initialData.nodes.length > 0 &&
+      initialData.progress.filter((p) => p.status === 'completed').length ===
+        initialData.nodes.length
+  )
 
   function progressFor(nodeId: string): Progress | null {
     return data.progress.find((p) => p.node_id === nodeId) ?? null
@@ -73,27 +119,98 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
     return prog.status
   }
 
-  // MOSTRAMOS TODOS LOS NODOS (incluso bloqueados). Los locked se muestran
-  // pero apagados/grises. Así el alumno ve el contorno de la aventura.
-  const visNodes = data.nodes
-  const visEdges = data.edges
+  function pushToast(kind: Toast['kind'], message: string) {
+    const id = Date.now() + Math.random()
+    setToasts((prev) => [...prev, { id, kind, message }])
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id))
+    }, 4200)
+  }
 
-  async function handleSubmit(nodeId: string, text: string) {
-    const result = await submitStudentNode(studentId, nodeId, text)
+  function pushFloat(nodeId: string, text: string, variant: 'gain' | 'loss') {
+    const id = Date.now() + Math.random()
+    setFloats((prev) => [...prev, { id, nodeId, text, variant }])
+    window.setTimeout(() => {
+      setFloats((prev) => prev.filter((f) => f.id !== id))
+    }, 2200)
+  }
+
+  async function handleSubmit(node: Node, text: string) {
+    const result = (await submitStudentNode(
+      studentId,
+      node.id,
+      text
+    )) as SubmitResponse
+
     if (!result.success) {
       alert(result.error)
       return
     }
+
+    // Recargar datos
     const res = await fetch(`/ikasle/misioa/${data.mission.id}/api/refresh`, {
       cache: 'no-store',
     })
+    let fresh: DetailData | null = null
     if (res.ok) {
-      const fresh = await res.json()
-      if (fresh.success) setData(fresh.data)
+      const j = await res.json()
+      if (j.success) {
+        fresh = j.data
+        setData(fresh!)
+      }
     }
+
+    // Animaciones según resultado
+    if (result.status === 'completed') {
+      // Flash verde sobre el nodo
+      setCompletionFlashNodeId(node.id)
+      window.setTimeout(() => setCompletionFlashNodeId(null), 1800)
+
+      const rewards = result.rewards ?? { xp: 0, hearts: 0, mana: 0 }
+      if (rewards.xp !== 0) {
+        pushFloat(node.id, `+${rewards.xp} XP`, 'gain')
+      }
+      if (rewards.hearts !== 0) {
+        const txt = `${rewards.hearts > 0 ? '+' : ''}${rewards.hearts} ❤`
+        pushFloat(node.id, txt, rewards.hearts > 0 ? 'gain' : 'loss')
+      }
+      if (rewards.mana !== 0) {
+        pushFloat(node.id, `+${rewards.mana} 🔮`, 'gain')
+      }
+
+      // Notificación de nodos desbloqueados
+      const unlocked = result.unlocked ?? []
+      if (unlocked.length > 0) {
+        const titles = unlocked.map((u) => u.title).join(', ')
+        pushToast('unlocked', `🔓 Helburu berriak: ${titles}`)
+      }
+
+      // Victoria
+      if (
+        result.completion?.completed &&
+        !result.completion.already &&
+        !alreadyCompletedRef.current
+      ) {
+        alreadyCompletedRef.current = true
+        // Pequeña pausa para que se vea la animación del nodo primero
+        window.setTimeout(() => {
+          setVictory({
+            name: result.completion?.mission_name ?? data.mission.name,
+            xp: result.completion?.final_xp ?? 0,
+            hearts: result.completion?.final_hearts ?? 0,
+            mana: result.completion?.final_mana ?? 0,
+          })
+        }, 1200)
+      }
+    } else if (result.status === 'pending_review') {
+      pushToast('completed', '⏳ Entregatuta. Irakasleak berrikusiko du.')
+    }
+
     setOpenNode(null)
   }
 
+  const visNodes = data.nodes
+  const visEdges = data.edges
   const completedCount = data.progress.filter(
     (p) => p.status === 'completed'
   ).length
@@ -186,34 +303,52 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
 
         {visNodes.map((node) => {
           const status = statusOf(node.id)
+          const nodeFloats = floats.filter((f) => f.nodeId === node.id)
+          const isFlashing = completionFlashNodeId === node.id
           return (
-            <button
+            <div
               key={node.id}
-              type="button"
-              className={`student-mission-node student-mission-node-${status}`}
-              style={{
-                left: `${node.position_x}%`,
-                top: `${node.position_y}%`,
-              }}
-              onClick={() => setOpenNode(node)}
-              disabled={status === 'locked'}
-              title={node.title}
+              className="student-mission-node-wrapper"
+              style={{ left: `${node.position_x}%`, top: `${node.position_y}%` }}
             >
-              <span className="student-mission-node-icon">
-                {status === 'completed'
-                  ? '✓'
-                  : status === 'failed'
-                  ? '✗'
-                  : status === 'pending_review'
-                  ? '⏳'
-                  : status === 'available'
-                  ? node.is_start
-                    ? '★'
-                    : '📍'
-                  : '🔒'}
-              </span>
-              <span className="student-mission-node-label">{node.title}</span>
-            </button>
+              <button
+                type="button"
+                className={`student-mission-node student-mission-node-${status} ${
+                  isFlashing ? 'student-mission-node-flash' : ''
+                }`}
+                onClick={() => setOpenNode(node)}
+                disabled={status === 'locked'}
+                title={node.title}
+              >
+                <span className="student-mission-node-icon">
+                  {status === 'completed'
+                    ? '✓'
+                    : status === 'failed'
+                    ? '✗'
+                    : status === 'pending_review'
+                    ? '⏳'
+                    : status === 'available'
+                    ? node.is_start
+                      ? '★'
+                      : '📍'
+                    : '🔒'}
+                </span>
+                <span className="student-mission-node-label">{node.title}</span>
+              </button>
+              {/* Floating rewards */}
+              {nodeFloats.length > 0 && (
+                <div className="student-mission-node-floats" aria-hidden="true">
+                  {nodeFloats.map((f) => (
+                    <span
+                      key={f.id}
+                      className={`student-mission-float student-mission-float-${f.variant}`}
+                    >
+                      {f.text}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           )
         })}
 
@@ -224,13 +359,34 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
         )}
       </div>
 
+      {/* Toasts */}
+      {toasts.length > 0 && (
+        <div className="mission-toasts" aria-live="polite">
+          {toasts.map((t) => (
+            <div key={t.id} className={`mission-toast mission-toast-${t.kind}`}>
+              {t.message}
+            </div>
+          ))}
+        </div>
+      )}
+
       {openNode && (
         <StudentNodeModal
           node={openNode}
           progress={progressFor(openNode.id)}
           status={statusOf(openNode.id)}
           onClose={() => setOpenNode(null)}
-          onSubmit={(text) => handleSubmit(openNode.id, text)}
+          onSubmit={(text) => handleSubmit(openNode, text)}
+        />
+      )}
+
+      {victory && (
+        <MissionVictoryOverlay
+          missionName={victory.name}
+          finalXp={victory.xp}
+          finalHearts={victory.hearts}
+          finalMana={victory.mana}
+          onClose={() => setVictory(null)}
         />
       )}
     </div>

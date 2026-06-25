@@ -2,9 +2,11 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { listMissions } from '@/lib/missions/actions'
+import { listPendingReviews } from '@/lib/missions/extra-actions'
 import { getMissionMap } from '@/lib/missions/maps'
 import EmptyState from '@/components/ui/EmptyState'
 import MissionMapBackground from '@/components/missions/MissionMapBackground'
+import PendingReviewsPanel from '@/components/missions/PendingReviewsPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +29,10 @@ export default async function MisioakPage({
     .single()
   if (!classroom || classroom.teacher_id !== user.id) notFound()
 
-  const { missions, nodeCounts } = await listMissions(classroomId)
+  const [{ missions, nodeCounts }, pendingReviews] = await Promise.all([
+    listMissions(classroomId),
+    listPendingReviews(classroomId),
+  ])
 
   return (
     <div className="panel-content">
@@ -43,6 +48,9 @@ export default async function MisioakPage({
           dute, mapako nodoetan zehar.
         </p>
       </section>
+
+      {/* Revisiones pendientes (solo si hay) */}
+      <PendingReviewsPanel initialReviews={pendingReviews} />
 
       <section className="panel-section">
         <div className="panel-section-header">

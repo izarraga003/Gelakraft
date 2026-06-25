@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getMissionWithGraph } from '@/lib/missions/actions'
+import { getMissionClassroomProgress } from '@/lib/missions/extra-actions'
 import MissionEditor from './MissionEditor'
 
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,10 @@ export default async function MisioEditorPage({
     .single()
   if (!classroom || classroom.teacher_id !== user.id) notFound()
 
-  const { mission, nodes, edges } = await getMissionWithGraph(missionId)
+  const [{ mission, nodes, edges }, progressRows] = await Promise.all([
+    getMissionWithGraph(missionId),
+    getMissionClassroomProgress(missionId),
+  ])
   if (!mission || mission.classroom_id !== classroomId) notFound()
 
   return (
@@ -34,6 +38,7 @@ export default async function MisioEditorPage({
       initialMission={mission}
       initialNodes={nodes}
       initialEdges={edges}
+      initialProgress={progressRows}
     />
   )
 }

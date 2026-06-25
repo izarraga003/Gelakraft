@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import MissionMapBackground from '@/components/missions/MissionMapBackground'
-import { MISSION_MAPS, type MissionMapId, getMissionMap } from '@/lib/missions/maps'
+import { MISSION_MAPS, getMissionMap } from '@/lib/missions/maps'
 import type { Mission, MissionEdge, MissionNode } from '@/lib/missions/types'
 import {
   createEdge,
@@ -15,7 +16,16 @@ import {
   updateMission,
   updateNode,
 } from '@/lib/missions/actions'
+import {
+  duplicateMission,
+  type StudentProgressRow,
+} from '@/lib/missions/extra-actions'
+import { validateMission } from '@/lib/missions/validate'
 import AsyncButton from '@/components/ui/AsyncButton'
+import ClassroomProgressTable from '@/components/missions/ClassroomProgressTable'
+import MissionValidationBadge from '@/components/missions/MissionValidationBadge'
+
+type Tab = 'map' | 'progress'
 
 type Props = {
   classroomId: string
@@ -23,6 +33,7 @@ type Props = {
   initialMission: Mission
   initialNodes: MissionNode[]
   initialEdges: MissionEdge[]
+  initialProgress: StudentProgressRow[]
 }
 
 export default function MissionEditor({
@@ -31,16 +42,17 @@ export default function MissionEditor({
   initialMission,
   initialNodes,
   initialEdges,
+  initialProgress,
 }: Props) {
-  // Mission: state "borrador" en draft + state "guardado" en saved
+  const router = useRouter()
+  const [tab, setTab] = useState<Tab>('map')
+
   const [savedMission, setSavedMission] = useState<Mission>(initialMission)
   const [draftMission, setDraftMission] = useState<Mission>(initialMission)
   const [nodes, setNodes] = useState<MissionNode[]>(initialNodes)
   const [edges, setEdges] = useState<MissionEdge[]>(initialEdges)
 
   const [editingNode, setEditingNode] = useState<MissionNode | null>(null)
-  // Cuando es un nodo recién creado: contiene el id del nodo y la lista
-  // de nodos existentes para preguntar predecesor.
   const [isNewNode, setIsNewNode] = useState(false)
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -54,27 +66,34 @@ export default function MissionEditor({
     moved: boolean
   } | null>(null)
 
-  const isDirty =
-    JSON.stringify({
-      name: draftMission.name,
-      description: draftMission.description,
-      background_id: draftMission.background_id,
-      is_active: draftMission.is_active,
-      final_xp_reward: draftMission.final_xp_reward,
-      final_hearts_reward: draftMission.final_hearts_reward,
-      final_mana_reward: draftMission.final_mana_reward,
-    }) !==
-    JSON.stringify({
-      name: savedMission.name,
-      description: savedMission.description,
-      background_id: savedMission.background_id,
-      is_active: savedMission.is_active,
-      final_xp_reward: savedMission.final_xp_reward,
-      final_hearts_reward: savedMission.final_hearts_reward,
-      final_mana_reward: savedMission.final_mana_reward,
-    })
+  const validationIssues = useMemo(
+    () => validateMission(nodes, edges),
+    [nodes, edges]
+  )
 
-  // Avisar antes de salir si hay cambios sin guardar
+  const isDirty = useMemo(
+    () =>
+      JSON.stringify({
+        name: draftMission.name,
+        description: draftMission.description,
+        background_id: draftMission.background_id,
+        is_active: draftMission.is_active,
+        final_xp_reward: draftMission.final_xp_reward,
+        final_hearts_reward: draftMission.final_hearts_reward,
+        final_mana_reward: draftMission.final_mana_reward,
+      }) !==
+      JSON.stringify({
+        name: savedMission.name,
+        description: savedMission.description,
+        background_id: savedMission.background_id,
+        is_active: savedMission.is_active,
+        final_xp_reward: savedMission.final_xp_reward,
+        final_hearts_reward: savedMission.final_hearts_reward,
+        final_mana_reward: savedMission.final_mana_reward,
+      }),
+    [draftMission, savedMission]
+  )
+
   useEffect(() => {
     if (!isDirty) return
     function onBeforeUnload(e: BeforeUnloadEvent) {
@@ -108,9 +127,17 @@ export default function MissionEditor({
     }
   }
 
+  async function handleDuplicate() {
+    if (!window.confirm('Misio honen kopia bat sortu nahi duzu?')) return
+    const result = await duplicateMission(savedMission.id)
+    if (!result.success) {
+      alert(`Errorea: ${result.error}`)
+      return
+    }
+    router.push(`/panela/ikasgela/${classroomId}/misioak/${result.newMissionId}`)
+  }
+
   async function handleAddNode(percentX: number, percentY: number) {
-    // El primer nodo: is_start true. Subsiguientes: false (luego edge se crea
-    // desde el modal donde se le pregunta al profesor cuál es el predecesor).
     const isFirst = nodes.length === 0
     const result = await createNode(savedMission.id, {
       title: isFirst ? 'Lehen helburua' : 'Helburu berria',
@@ -264,18 +291,14 @@ export default function MissionEditor({
       return
     }
     setNodes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
-
-    // Si era un nodo nuevo y el profesor eligió predecesor: crear edge
     if (predecessorId) {
       await handleCreateEdge(predecessorId, updated.id, 'always')
     }
-
     setEditingNode(null)
     setIsNewNode(false)
   }
 
   async function handleCancelNewNode(nodeId: string) {
-    // Si era un nodo nuevo y el profesor cancela, eliminar el nodo
     const result = await deleteNode(nodeId)
     if (result.success) {
       setNodes((prev) => prev.filter((n) => n.id !== nodeId))
@@ -311,22 +334,32 @@ export default function MissionEditor({
         >
           {savedMission.is_active ? '● Aktibo' : '○ Ezkutatuta'}
         </span>
+        <MissionValidationBadge issues={validationIssues} />
 
         <div className="mission-editor-header-actions">
+          {tab === 'map' && (
+            <button
+              type="button"
+              className="mission-editor-action"
+              onClick={() => {
+                if (connectingFrom) setConnectingFrom(null)
+                else if (nodes[0]) setConnectingFrom(nodes[0].id)
+                else alert('Sortu lehenik helburu bat.')
+              }}
+              title="Konektatu nodoak"
+            >
+              {connectingFrom ? '✕ Utzi konektatzea' : '🔗 Konektatu nodoak'}
+            </button>
+          )}
           <button
             type="button"
             className="mission-editor-action"
-            onClick={() => {
-              if (connectingFrom) setConnectingFrom(null)
-              else if (nodes[0]) setConnectingFrom(nodes[0].id)
-              else alert('Sortu lehenik helburu bat.')
-            }}
-            title="Konektatu nodoak"
+            onClick={handleDuplicate}
+            title="Misio honen kopia sortu"
           >
-            {connectingFrom ? '✕ Utzi konektatzea' : '🔗 Konektatu nodoak'}
+            📋 Bikoiztu
           </button>
 
-          {/* BOTÓN GUARDAR (configuración de la misión) */}
           <AsyncButton
             className={`mission-editor-save-btn ${
               isDirty ? 'mission-editor-save-btn-dirty' : ''
@@ -334,7 +367,11 @@ export default function MissionEditor({
             onClick={handleSaveMission}
             disabled={!isDirty || saving}
           >
-            {saveOk === 'ok' ? '✓ Gordeta' : isDirty ? '● Gorde aldaketak' : 'Gordeta'}
+            {saveOk === 'ok'
+              ? '✓ Gordeta'
+              : isDirty
+              ? '● Gorde aldaketak'
+              : 'Gordeta'}
           </AsyncButton>
         </div>
       </header>
@@ -345,257 +382,283 @@ export default function MissionEditor({
         </div>
       )}
 
-      <div className="mission-editor-body">
-        <div
-          className="mission-editor-canvas"
-          ref={mapRef}
-          onClick={onMapClick}
+      {/* TABS */}
+      <div className="mission-editor-tabs">
+        <button
+          type="button"
+          className={`mission-editor-tab ${tab === 'map' ? 'mission-editor-tab-active' : ''}`}
+          onClick={() => setTab('map')}
         >
-          <MissionMapBackground mapId={draftMission.background_id} />
+          🗺️ Mapa eta nodoak
+        </button>
+        <button
+          type="button"
+          className={`mission-editor-tab ${tab === 'progress' ? 'mission-editor-tab-active' : ''}`}
+          onClick={() => setTab('progress')}
+        >
+          📊 Klasearen aurrerapena
+        </button>
+      </div>
 
-          <svg
-            className="mission-editor-edges"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
+      {tab === 'map' && (
+        <div className="mission-editor-body">
+          <div
+            className="mission-editor-canvas"
+            ref={mapRef}
+            onClick={onMapClick}
           >
-            <defs>
-              <marker
-                id="arrow-always"
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="4"
-                markerHeight="4"
-                orient="auto"
-              >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFFDE7" />
-              </marker>
-              <marker
-                id="arrow-success"
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="4"
-                markerHeight="4"
-                orient="auto"
-              >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#7CD876" />
-              </marker>
-              <marker
-                id="arrow-failure"
-                viewBox="0 0 10 10"
-                refX="8"
-                refY="5"
-                markerWidth="4"
-                markerHeight="4"
-                orient="auto"
-              >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF8B6A" />
-              </marker>
-            </defs>
-            {edges.map((edge) => {
-              const from = nodes.find((n) => n.id === edge.from_node_id)
-              const to = nodes.find((n) => n.id === edge.to_node_id)
-              if (!from || !to) return null
-              const strokeColor =
-                edge.condition === 'success'
-                  ? '#7CD876'
-                  : edge.condition === 'failure'
-                  ? '#FF8B6A'
-                  : '#FFFDE7'
-              return (
-                <line
-                  key={edge.id}
-                  x1={from.position_x}
-                  y1={from.position_y}
-                  x2={to.position_x}
-                  y2={to.position_y}
-                  stroke={strokeColor}
-                  strokeWidth="0.4"
-                  opacity="0.9"
-                  markerEnd={`url(#arrow-${edge.condition})`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    void handleDeleteEdge(edge.id)
-                  }}
-                  style={{ cursor: 'pointer', pointerEvents: 'all' }}
-                />
-              )
-            })}
-          </svg>
+            <MissionMapBackground mapId={draftMission.background_id} />
 
-          {nodes.map((node) => (
-            <button
-              key={node.id}
-              type="button"
-              className={`mission-node-marker ${
-                node.is_start ? 'mission-node-marker-start' : ''
-              } ${connectingFrom === node.id ? 'mission-node-marker-connecting' : ''}`}
-              style={{
-                left: `${node.position_x}%`,
-                top: `${node.position_y}%`,
-              }}
-              onPointerDown={(e) => onNodePointerDown(e, node)}
+            <svg
+              className="mission-editor-edges"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
             >
-              <span className="mission-node-marker-icon">
-                {node.is_start ? '★' : '📍'}
-              </span>
-              <span className="mission-node-marker-label">{node.title}</span>
-              <span className="mission-node-marker-rewards">
-                +{node.xp_reward}⚡
-                {node.hearts_delta !== 0 &&
-                  ` ${node.hearts_delta > 0 ? '+' : ''}${node.hearts_delta}❤`}
-              </span>
-            </button>
-          ))}
+              <defs>
+                <marker
+                  id="arrow-always"
+                  viewBox="0 0 10 10"
+                  refX="8"
+                  refY="5"
+                  markerWidth="4"
+                  markerHeight="4"
+                  orient="auto"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFFDE7" />
+                </marker>
+                <marker
+                  id="arrow-success"
+                  viewBox="0 0 10 10"
+                  refX="8"
+                  refY="5"
+                  markerWidth="4"
+                  markerHeight="4"
+                  orient="auto"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#7CD876" />
+                </marker>
+                <marker
+                  id="arrow-failure"
+                  viewBox="0 0 10 10"
+                  refX="8"
+                  refY="5"
+                  markerWidth="4"
+                  markerHeight="4"
+                  orient="auto"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF8B6A" />
+                </marker>
+              </defs>
+              {edges.map((edge) => {
+                const from = nodes.find((n) => n.id === edge.from_node_id)
+                const to = nodes.find((n) => n.id === edge.to_node_id)
+                if (!from || !to) return null
+                const strokeColor =
+                  edge.condition === 'success'
+                    ? '#7CD876'
+                    : edge.condition === 'failure'
+                    ? '#FF8B6A'
+                    : '#FFFDE7'
+                return (
+                  <line
+                    key={edge.id}
+                    x1={from.position_x}
+                    y1={from.position_y}
+                    x2={to.position_x}
+                    y2={to.position_y}
+                    stroke={strokeColor}
+                    strokeWidth="0.4"
+                    opacity="0.9"
+                    markerEnd={`url(#arrow-${edge.condition})`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void handleDeleteEdge(edge.id)
+                    }}
+                    style={{ cursor: 'pointer', pointerEvents: 'all' }}
+                  />
+                )
+              })}
+            </svg>
 
-          {nodes.length === 0 && (
-            <div className="mission-editor-hint">
-              Sakatu mapan lehen helburua sortzeko
-            </div>
-          )}
-        </div>
+            {nodes.map((node) => (
+              <button
+                key={node.id}
+                type="button"
+                className={`mission-node-marker ${
+                  node.is_start ? 'mission-node-marker-start' : ''
+                } ${connectingFrom === node.id ? 'mission-node-marker-connecting' : ''}`}
+                style={{
+                  left: `${node.position_x}%`,
+                  top: `${node.position_y}%`,
+                }}
+                onPointerDown={(e) => onNodePointerDown(e, node)}
+              >
+                <span className="mission-node-marker-icon">
+                  {node.is_start ? '★' : '📍'}
+                </span>
+                <span className="mission-node-marker-label">{node.title}</span>
+                <span className="mission-node-marker-rewards">
+                  +{node.xp_reward}⚡
+                  {node.hearts_delta !== 0 &&
+                    ` ${node.hearts_delta > 0 ? '+' : ''}${node.hearts_delta}❤`}
+                </span>
+              </button>
+            ))}
 
-        <aside className="mission-editor-sidebar">
-          <section className="mission-editor-section">
-            <h3>Misioaren konfigurazioa</h3>
-            <div className="form-field">
-              <label htmlFor="mission-name">Izena</label>
-              <input
-                id="mission-name"
-                type="text"
-                value={draftMission.name}
-                onChange={(e) =>
-                  setDraftMission({ ...draftMission, name: e.target.value })
-                }
-                maxLength={120}
-              />
-            </div>
-            <div className="form-field">
-              <label htmlFor="mission-desc">Sarrera narratiboa</label>
-              <textarea
-                id="mission-desc"
-                rows={3}
-                value={draftMission.description}
-                onChange={(e) =>
-                  setDraftMission({
-                    ...draftMission,
-                    description: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <label className="mission-editor-toggle">
-              <input
-                type="checkbox"
-                checked={draftMission.is_active}
-                onChange={(e) =>
-                  setDraftMission({
-                    ...draftMission,
-                    is_active: e.target.checked,
-                  })
-                }
-              />
-              <span>Aktibo (ikasleek ikus dezakete)</span>
-            </label>
-          </section>
+            {nodes.length === 0 && (
+              <div className="mission-editor-hint">
+                Sakatu mapan lehen helburua sortzeko
+              </div>
+            )}
+          </div>
 
-          <section className="mission-editor-section">
-            <h3>Mapa</h3>
-            <div className="mission-map-picker-compact">
-              {MISSION_MAPS.map((map) => (
-                <label key={map.id} className="mission-map-option-compact">
+          <aside className="mission-editor-sidebar">
+            <section className="mission-editor-section">
+              <h3>Misioaren konfigurazioa</h3>
+              <div className="form-field">
+                <label htmlFor="mission-name">Izena</label>
+                <input
+                  id="mission-name"
+                  type="text"
+                  value={draftMission.name}
+                  onChange={(e) =>
+                    setDraftMission({ ...draftMission, name: e.target.value })
+                  }
+                  maxLength={120}
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="mission-desc">Sarrera narratiboa</label>
+                <textarea
+                  id="mission-desc"
+                  rows={3}
+                  value={draftMission.description}
+                  onChange={(e) =>
+                    setDraftMission({
+                      ...draftMission,
+                      description: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <label className="mission-editor-toggle">
+                <input
+                  type="checkbox"
+                  checked={draftMission.is_active}
+                  onChange={(e) =>
+                    setDraftMission({
+                      ...draftMission,
+                      is_active: e.target.checked,
+                    })
+                  }
+                />
+                <span>Aktibo (ikasleek ikus dezakete)</span>
+              </label>
+            </section>
+
+            <section className="mission-editor-section">
+              <h3>Mapa</h3>
+              <div className="mission-map-picker-compact">
+                {MISSION_MAPS.map((map) => (
+                  <label key={map.id} className="mission-map-option-compact">
+                    <input
+                      type="radio"
+                      name="bg"
+                      value={map.id}
+                      checked={draftMission.background_id === map.id}
+                      onChange={() =>
+                        setDraftMission({
+                          ...draftMission,
+                          background_id: map.id,
+                        })
+                      }
+                    />
+                    <span className="mission-map-option-preview-compact">
+                      <MissionMapBackground mapId={map.id} />
+                    </span>
+                    <span>{map.name}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mission-editor-current-map">
+                Egungo mapa: <strong>{currentMap.name}</strong>
+              </p>
+            </section>
+
+            <section className="mission-editor-section">
+              <h3>Amaierako sariak</h3>
+              <p className="mission-editor-hint-small">
+                Misio osoa amaitzean gehigarriak (helburu guztiak osatuta).
+              </p>
+              <div className="mission-editor-rewards-grid">
+                <div className="form-field-compact">
+                  <label>⚡ XP</label>
                   <input
-                    type="radio"
-                    name="bg"
-                    value={map.id}
-                    checked={draftMission.background_id === map.id}
-                    onChange={() =>
+                    type="number"
+                    value={draftMission.final_xp_reward}
+                    onChange={(e) =>
                       setDraftMission({
                         ...draftMission,
-                        background_id: map.id,
+                        final_xp_reward: parseInt(e.target.value) || 0,
                       })
                     }
                   />
-                  <span className="mission-map-option-preview-compact">
-                    <MissionMapBackground mapId={map.id} />
-                  </span>
-                  <span>{map.name}</span>
-                </label>
-              ))}
-            </div>
-            <p className="mission-editor-current-map">
-              Egungo mapa: <strong>{currentMap.name}</strong>
-            </p>
-          </section>
-
-          <section className="mission-editor-section">
-            <h3>Amaierako sariak</h3>
-            <p className="mission-editor-hint-small">
-              Misio osoa amaitzean gehigarriak.
-            </p>
-            <div className="mission-editor-rewards-grid">
-              <div className="form-field-compact">
-                <label>⚡ XP</label>
-                <input
-                  type="number"
-                  value={draftMission.final_xp_reward}
-                  onChange={(e) =>
-                    setDraftMission({
-                      ...draftMission,
-                      final_xp_reward: parseInt(e.target.value) || 0,
-                    })
-                  }
-                />
+                </div>
+                <div className="form-field-compact">
+                  <label>❤ Bihotzak</label>
+                  <input
+                    type="number"
+                    value={draftMission.final_hearts_reward}
+                    onChange={(e) =>
+                      setDraftMission({
+                        ...draftMission,
+                        final_hearts_reward: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+                <div className="form-field-compact">
+                  <label>🔮 Mana</label>
+                  <input
+                    type="number"
+                    value={draftMission.final_mana_reward}
+                    onChange={(e) =>
+                      setDraftMission({
+                        ...draftMission,
+                        final_mana_reward: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
               </div>
-              <div className="form-field-compact">
-                <label>❤ Bihotzak</label>
-                <input
-                  type="number"
-                  value={draftMission.final_hearts_reward}
-                  onChange={(e) =>
-                    setDraftMission({
-                      ...draftMission,
-                      final_hearts_reward: parseInt(e.target.value) || 0,
-                    })
-                  }
-                />
-              </div>
-              <div className="form-field-compact">
-                <label>🔮 Mana</label>
-                <input
-                  type="number"
-                  value={draftMission.final_mana_reward}
-                  onChange={(e) =>
-                    setDraftMission({
-                      ...draftMission,
-                      final_mana_reward: parseInt(e.target.value) || 0,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </section>
+            </section>
 
-          <section className="mission-editor-section">
-            <h3>Estatistikak</h3>
-            <ul className="mission-editor-stats">
-              <li>📍 {nodes.length} helburu</li>
-              <li>🔗 {edges.length} konexio</li>
-              <li>🏫 {classroomName}</li>
-            </ul>
-          </section>
+            <section className="mission-editor-section">
+              <h3>Estatistikak</h3>
+              <ul className="mission-editor-stats">
+                <li>📍 {nodes.length} helburu</li>
+                <li>🔗 {edges.length} konexio</li>
+                <li>🏫 {classroomName}</li>
+              </ul>
+            </section>
 
-          <section className="mission-editor-section mission-editor-danger">
-            <AsyncButton
-              className="mission-editor-delete-btn"
-              onClick={handleDeleteMission}
-            >
-              🗑 Misioa ezabatu
-            </AsyncButton>
-          </section>
-        </aside>
-      </div>
+            <section className="mission-editor-section mission-editor-danger">
+              <AsyncButton
+                className="mission-editor-delete-btn"
+                onClick={handleDeleteMission}
+              >
+                🗑 Misioa ezabatu
+              </AsyncButton>
+            </section>
+          </aside>
+        </div>
+      )}
+
+      {tab === 'progress' && (
+        <div className="mission-editor-progress-tab">
+          <ClassroomProgressTable rows={initialProgress} />
+        </div>
+      )}
 
       {editingNode && (
         <NodeEditorModal
@@ -629,7 +692,7 @@ export default function MissionEditor({
 }
 
 // ============================================================
-// NodeEditorModal
+// NodeEditorModal (idéntico al de v2)
 // ============================================================
 function NodeEditorModal({
   node,
@@ -665,9 +728,7 @@ function NodeEditorModal({
   const [newEdgeCondition, setNewEdgeCondition] =
     useState<'always' | 'success' | 'failure'>('always')
 
-  // Nodos disponibles como predecesor: todos los demás (excluyendo este)
   const candidatePredecessors = allNodes.filter((n) => n.id !== node.id)
-
   const outgoingEdges = edges.filter((e) => e.from_node_id === node.id)
   const availableTargets = allNodes.filter(
     (n) =>
@@ -710,15 +771,14 @@ function NodeEditorModal({
             />
           </div>
 
-          {/* SOLO EN NODO NUEVO: selector de predecesor */}
           {isNewNode && candidatePredecessors.length > 0 && (
             <div className="form-field node-editor-predecessor">
-              <label>Aurreko nodoa (zer nodo osatu behar da hau desblokeatzeko?)</label>
+              <label>Aurreko nodoa</label>
               <select
                 value={predecessorId}
                 onChange={(e) => setPredecessorId(e.target.value)}
               >
-                <option value="">— Hau erro-nodo bat da (ez du aurrekorik) —</option>
+                <option value="">— Hau erro-nodoa da (aurrekorik gabe) —</option>
                 {candidatePredecessors.map((n) => (
                   <option key={n.id} value={n.id}>
                     {n.is_start ? '★ ' : ''}
@@ -727,8 +787,7 @@ function NodeEditorModal({
                 ))}
               </select>
               <p className="node-editor-hint-inline">
-                Aukeratu zein nodotik desblokeatzen den hau. Hutsik utziz gero,
-                hasierako nodoekin nahasten da.
+                Aukeratu zein nodotik desblokeatzen den hau.
               </p>
             </div>
           )}
@@ -871,10 +930,9 @@ function NodeEditorModal({
             </div>
           </div>
 
-          {/* Solo en nodo existente: gestor de edges salientes */}
           {!isNewNode && (
             <div className="node-editor-section">
-              <h4>Hurrengo nodoak (irteten diren konexioak)</h4>
+              <h4>Hurrengo nodoak</h4>
               {outgoingEdges.length === 0 ? (
                 <p className="node-editor-empty">
                   Konexiorik gabe — azken nodoa da.
@@ -899,7 +957,6 @@ function NodeEditorModal({
                           type="button"
                           onClick={() => void onDeleteEdge(edge.id)}
                           className="node-editor-edge-delete"
-                          aria-label="Ezabatu"
                         >
                           ✕
                         </button>
@@ -915,7 +972,7 @@ function NodeEditorModal({
                     value={newEdgeTo}
                     onChange={(e) => setNewEdgeTo(e.target.value)}
                   >
-                    <option value="">— Aukeratu hurrengo nodoa —</option>
+                    <option value="">— Hurrengo nodoa —</option>
                     {availableTargets.map((n) => (
                       <option key={n.id} value={n.id}>
                         {n.title}
