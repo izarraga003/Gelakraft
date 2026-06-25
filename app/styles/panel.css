@@ -648,3 +648,232 @@
   width: fit-content;
 }
 
+
+/* ============================================
+   SPINNER, EMPTY STATE, FLOATING NUMBERS, EDIT INLINE
+   ============================================ */
+
+/* Spinner inline */
+.inline-spinner {
+  display: inline-block;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: inline-spinner-rotate 0.7s linear infinite;
+  opacity: 0.85;
+  vertical-align: middle;
+}
+@keyframes inline-spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+.async-button-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1em;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 36px 24px;
+  gap: 6px;
+}
+.empty-state-illustration {
+  color: var(--urrea);
+  opacity: 0.65;
+  margin-bottom: 8px;
+  max-width: 180px;
+  width: 100%;
+}
+.empty-state-illustration svg {
+  width: 100%;
+  height: auto;
+}
+.empty-state-title {
+  font-family: var(--font-fraunces-stack);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ilun);
+  margin: 0;
+}
+.empty-state-description {
+  font-size: 13.5px;
+  color: var(--iluntze);
+  max-width: 380px;
+  line-height: 1.55;
+  margin: 4px 0 0;
+}
+.empty-state-action {
+  margin-top: 18px;
+}
+/* Variantes dentro de fondo oscuro (panel del profesor) */
+.empty-state-title { color: var(--ilun); }
+@media (prefers-color-scheme: dark) {
+  /* placeholder */
+}
+
+/* Floating numbers en cards del panel del profesor */
+.student-card { position: relative; }
+.student-card-flash {
+  animation: student-card-flash-anim 1.8s ease-out;
+}
+@keyframes student-card-flash-anim {
+  0%   { box-shadow: 0 0 0 rgba(184, 138, 60, 0); }
+  10%  { box-shadow: 0 0 28px rgba(184, 138, 60, 0.55); }
+  100% { box-shadow: 0 0 0 rgba(184, 138, 60, 0); }
+}
+.student-card-floats {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 5;
+}
+.student-card-float {
+  font-family: var(--font-fraunces-stack);
+  font-weight: 800;
+  font-size: 16px;
+  padding: 3px 10px;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1.5px solid;
+  animation: student-card-float-up 2.2s ease-out forwards;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+.student-card-float-gain {
+  color: #2D7A1F;
+  border-color: rgba(79, 139, 58, 0.6);
+}
+.student-card-float-loss {
+  color: var(--sugaar);
+  border-color: rgba(194, 70, 23, 0.6);
+}
+@keyframes student-card-float-up {
+  0%   { transform: translateY(8px) scale(0.7); opacity: 0; }
+  15%  { transform: translateY(0) scale(1.1); opacity: 1; }
+  25%  { transform: translateY(-3px) scale(1); opacity: 1; }
+  85%  { transform: translateY(-24px) scale(1); opacity: 1; }
+  100% { transform: translateY(-36px) scale(0.9); opacity: 0; }
+}
+
+/* Edición inline del nombre del alumno */
+.student-detail-name-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  transition: opacity 0.15s;
+}
+.student-detail-name-button:hover .student-detail-name-pencil,
+.student-detail-name-button:focus-visible .student-detail-name-pencil {
+  opacity: 0.85;
+}
+.student-detail-name-pencil {
+  font-size: 14px;
+  color: var(--urrea);
+  opacity: 0.3;
+  transition: opacity 0.15s;
+}
+.student-detail-name-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.student-detail-name-input {
+  font-family: var(--font-fraunces-stack);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ilun);
+  background: white;
+  border: 1.5px solid var(--urrea);
+  border-radius: 6px;
+  padding: 4px 10px;
+  outline: none;
+  min-width: 200px;
+  flex: 1;
+}
+.student-detail-name-input:focus {
+  box-shadow: 0 0 0 3px rgba(184, 138, 60, 0.2);
+}
+.student-detail-name-save,
+.student-detail-name-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(184, 138, 60, 0.4);
+  background: white;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+.student-detail-name-save {
+  color: #2D7A1F;
+  border-color: rgba(79, 139, 58, 0.5);
+}
+.student-detail-name-save:hover:not(:disabled) {
+  background: rgba(79, 139, 58, 0.12);
+}
+.student-detail-name-cancel {
+  color: var(--sugaar);
+  border-color: rgba(194, 70, 23, 0.4);
+}
+.student-detail-name-cancel:hover:not(:disabled) {
+  background: rgba(194, 70, 23, 0.08);
+}
+.student-detail-name-error {
+  display: block;
+  width: 100%;
+  color: var(--sugaar);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Badge pendientes en classroom card */
+.panel-classroom-stage-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.panel-classroom-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--sugaar);
+  color: white;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: var(--font-inter-stack);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 50px;
+  box-shadow: 0 4px 14px rgba(194, 70, 23, 0.35);
+  animation: pending-pulse 2.5s ease-in-out infinite;
+}
+@keyframes pending-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}

@@ -277,3 +277,54 @@ export async function applyRewardToClassroom(
   revalidatePath(`/panela/ikasgela/${classroomId}`)
   return { success: true }
 }
+
+
+/**
+ * Actualiza el nombre completo de un alumno (no toca username).
+ * Verifica que el aula del alumno pertenezca al profesor autenticado.
+ */
+export async function updateStudentName(
+  studentId: string,
+  newName: string
+): Promise<{ success: true } | { success: false; error: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Saioa hasi behar duzu.' }
+
+  const trimmed = newName.trim()
+  if (!trimmed) {
+    return { success: false, error: 'Izenak ezin du hutsik egon.' }
+  }
+  if (trimmed.length > 80) {
+    return { success: false, error: 'Izena luzeegia da (gehienez 80 karaktere).' }
+  }
+
+  // Verificar ownership vía join
+  const { data: student } = await supabase
+    .from('students')
+    .select('classroom_id, classrooms!inner(teacher_id)')
+    .eq('id', studentId)
+    .single()
+  if (!student) return { success: false, error: 'Ikaslea ez da aurkitu.' }
+
+  const classroomData = student.classrooms as unknown as
+    | { teacher_id: string }
+    | { teacher_id: string }[]
+  const teacherId = Array.isArray(classroomData)
+    ? classroomData[0]?.teacher_id
+    : classroomData?.teacher_id
+  if (teacherId !== user.id) {
+    return { success: false, error: 'Ez duzu baimenik ikasle honetan.' }
+  }
+
+  const { error } = await supabase
+    .from('students')
+    .update({ full_name: trimmed })
+    .eq('id', studentId)
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/panela/ikasgela/${student.classroom_id}`)
+  return { success: true }
+}

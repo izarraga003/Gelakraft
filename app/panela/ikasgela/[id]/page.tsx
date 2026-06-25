@@ -7,6 +7,7 @@ import { countPendingRequests } from '@/lib/powers/actions'
 import { listPendingDeaths } from '@/lib/patuak/actions'
 import StudentsGrid from './StudentsGrid'
 import PendingDeathsPanel from './PendingDeathsPanel'
+import EmptyState from '@/components/ui/EmptyState'
 import {
   FlameIcon,
   SilenceMoonIcon,
@@ -163,12 +164,19 @@ export default async function ClassroomDetailPage({
         </div>
 
         {studentList.length === 0 ? (
-          <div className="panel-empty-state">
-            <p>Ez dago ikaslerik oraindik.</p>
-            <p className="panel-empty-hint">
-              Sakatu &laquo;Ikasleak gehitu&raquo; izenen zerrenda bat itsasteko.
-            </p>
-          </div>
+          <EmptyState
+            variant="students"
+            title="Ez dago ikaslerik oraindik."
+            description="Sakatu «Ikasleak gehitu» izenen zerrenda bat itsasteko."
+            action={
+              <Link
+                href={`/panela/ikasgela/${id}/ikasle-berria`}
+                className="panel-cta-btn"
+              >
+                + Ikasleak gehitu
+              </Link>
+            }
+          />
         ) : (
           <StudentsGrid
             students={studentList}

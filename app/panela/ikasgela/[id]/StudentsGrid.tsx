@@ -1,7 +1,11 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
-import { regeneratePassword, deleteStudent } from '@/lib/students/actions'
+import { useState, useTransition, useMemo, useRef } from 'react'
+import {
+  regeneratePassword,
+  deleteStudent,
+  updateStudentName,
+} from '@/lib/students/actions'
 import { adjustStudents } from '@/lib/students/adjust-actions'
 import {
   HERO_CLASS_LABELS,
@@ -11,6 +15,8 @@ import { xpToLevel } from '@/lib/students/level'
 import { sanitizeAvatarConfig, type AvatarConfig } from '@/lib/students/avatar'
 import AvatarRender from '@/components/student/AvatarRender'
 import StudentHistory from '@/components/student/StudentHistory'
+import AsyncButton from '@/components/ui/AsyncButton'
+import EmptyState from '@/components/ui/EmptyState'
 import { getPowersForClass } from '@/lib/powers/catalog'
 import type { Behavior } from '@/lib/behaviors/actions'
 
@@ -52,6 +58,15 @@ export default function StudentsGrid({
   const [, startTransition] = useTransition()
   const [busy, setBusy] = useState(false)
   const [openStudent, setOpenStudent] = useState<Student | null>(null)
+
+  // Floating numbers (+10 XP, -1 ♥) sobre las cards tras aplicar acciones
+  type FloatingChange = {
+    id: number
+    studentId: string
+    kind: 'xp' | 'hearts'
+    delta: number
+  }
+  const [floating, setFloating] = useState<FloatingChange[]>([])
 
   const positives = useMemo(
     () => behaviors.filter((b) => b.behavior_type === 'positive'),
@@ -152,6 +167,34 @@ export default function StudentsGrid({
         }
       })
     )
+
+    // Floating numbers + flash visual sobre cada alumno afectado
+    const newFloating: FloatingChange[] = []
+    for (const sid of studentIds) {
+      if (xpDelta !== 0) {
+        newFloating.push({
+          id: Date.now() + Math.random(),
+          studentId: sid,
+          kind: 'xp',
+          delta: xpDelta,
+        })
+      }
+      if (heartsDelta !== 0) {
+        newFloating.push({
+          id: Date.now() + Math.random(),
+          studentId: sid,
+          kind: 'hearts',
+          delta: heartsDelta,
+        })
+      }
+    }
+    if (newFloating.length > 0) {
+      setFloating((prev) => [...prev, ...newFloating])
+      const ids = newFloating.map((f) => f.id)
+      window.setTimeout(() => {
+        setFloating((prev) => prev.filter((f) => !ids.includes(f.id)))
+      }, 2200)
+    }
 
     if (openStudent && studentIds.includes(openStudent.id)) {
       setOpenStudent((prev) =>
@@ -258,11 +301,36 @@ export default function StudentsGrid({
               {group.students.map((s) => {
                 const safeAvatar = sanitizeAvatarConfig(s.avatar_config, 99)
                 const isSelected = selected.has(s.id)
+                const studentFloating = floating.filter((f) => f.studentId === s.id)
+                const isFlashing = studentFloating.length > 0
                 return (
                   <article
                     key={s.id}
-                    className={`student-card ${isSelected ? 'student-card-selected' : ''}`}
+                    className={`student-card ${isSelected ? 'student-card-selected' : ''} ${
+                      isFlashing ? 'student-card-flash' : ''
+                    }`}
                   >
+                    {studentFloating.length > 0 && (
+                      <div className="student-card-floats" aria-hidden="true">
+                        {studentFloating.map((f) => {
+                          const sign = f.delta > 0 ? '+' : ''
+                          const label =
+                            f.kind === 'xp'
+                              ? `${sign}${f.delta} XP`
+                              : `${sign}${f.delta} ❤`
+                          const variant =
+                            f.delta > 0 ? 'gain' : 'loss'
+                          return (
+                            <span
+                              key={f.id}
+                              className={`student-card-float student-card-float-${variant}`}
+                            >
+                              {label}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
                     <label className="student-card-select">
                       <input
                         type="checkbox"
@@ -308,22 +376,20 @@ export default function StudentsGrid({
                     </div>
 
                     <div className="student-card-quick">
-                      <button
-                        type="button"
+                      <AsyncButton
                         className="student-quick-btn student-quick-positive"
                         onClick={() => applyAdjustment([s.id], 10, 0)}
                         disabled={busy}
                       >
                         +10 XP
-                      </button>
-                      <button
-                        type="button"
+                      </AsyncButton>
+                      <AsyncButton
                         className="student-quick-btn student-quick-negative"
                         onClick={() => applyAdjustment([s.id], 0, -1)}
                         disabled={busy || s.hearts <= 0}
                       >
                         -1 ♥
-                      </button>
+                      </AsyncButton>
                     </div>
                   </article>
                 )
@@ -418,7 +484,15 @@ function StudentDetailModal({
             <AvatarRender config={safeAvatar} size={130} />
           </div>
           <div className="student-detail-info">
-            <h2 className="student-detail-name">{student.full_name}</h2>
+            <EditableName
+              initialName={student.full_name}
+              studentId={student.id}
+              onUpdated={(name) => {
+                // El padre se actualiza por revalidatePath, pero también
+                // refrescamos el state local para feedback inmediato.
+                student.full_name = name
+              }}
+            />
             <div className="student-detail-meta">
               <span className={`student-hero-class hero-${student.hero_class}`}>
                 {HERO_CLASS_LABELS[student.hero_class]}
@@ -918,5 +992,110 @@ function BulkActionsBar({
         </div>
       )}
     </div>
+  )
+}
+
+// ============================================================
+// EditableName: nombre editable inline (click para editar)
+// ============================================================
+function EditableName({
+  initialName,
+  studentId,
+  onUpdated,
+}: {
+  initialName: string
+  studentId: string
+  onUpdated: (newName: string) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(initialName)
+  const [name, setName] = useState(initialName)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  async function commit() {
+    const trimmed = value.trim()
+    if (!trimmed || trimmed === name) {
+      setEditing(false)
+      setValue(name)
+      return
+    }
+    setSaving(true)
+    setError(null)
+    const result = await updateStudentName(studentId, trimmed)
+    setSaving(false)
+    if (!result.success) {
+      setError(result.error)
+      return
+    }
+    setName(trimmed)
+    onUpdated(trimmed)
+    setEditing(false)
+  }
+
+  function cancel() {
+    setValue(name)
+    setEditing(false)
+    setError(null)
+  }
+
+  if (editing) {
+    return (
+      <div className="student-detail-name-edit">
+        <input
+          ref={inputRef}
+          type="text"
+          className="student-detail-name-input"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void commit()
+            else if (e.key === 'Escape') cancel()
+          }}
+          disabled={saving}
+          maxLength={80}
+          autoFocus
+          aria-label="Ikasle izena"
+        />
+        <AsyncButton
+          className="student-detail-name-save"
+          onClick={commit}
+          disabled={saving}
+          aria-label="Gorde"
+        >
+          ✓
+        </AsyncButton>
+        <button
+          type="button"
+          className="student-detail-name-cancel"
+          onClick={cancel}
+          disabled={saving}
+          aria-label="Utzi"
+        >
+          ✕
+        </button>
+        {error && (
+          <span className="student-detail-name-error" role="alert">
+            {error}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="student-detail-name student-detail-name-button"
+      onClick={() => {
+        setEditing(true)
+        setTimeout(() => inputRef.current?.focus(), 0)
+      }}
+      title="Sakatu izena editatzeko"
+    >
+      <span>{name}</span>
+      <span className="student-detail-name-pencil" aria-hidden="true">✎</span>
+    </button>
   )
 }
