@@ -38,11 +38,11 @@ const heroes: HeroClass[] = [
 
 function HeroCard({ name, archetype, desc, icon }: HeroClass) {
   return (
-    <article className="hero-card">
-      <div className="hero-icon">{icon}</div>
-      <h4 className="hero-name">{name}</h4>
-      <p className="hero-archetype">{archetype}</p>
-      <p className="hero-desc">{desc}</p>
+    <article className="mythology-class-card">
+      <div className="mythology-class-icon">{icon}</div>
+      <h4 className="mythology-class-name">{name}</h4>
+      <p className="mythology-class-archetype">{archetype}</p>
+      <p className="mythology-class-desc">{desc}</p>
     </article>
   )
 }

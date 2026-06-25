@@ -256,7 +256,6 @@ export default function StudentsGrid({
 
             <div className="students-grid">
               {group.students.map((s) => {
-                const level = xpToLevel(s.xp)
                 const safeAvatar = sanitizeAvatarConfig(s.avatar_config, 99)
                 const isSelected = selected.has(s.id)
                 return (
@@ -280,7 +279,6 @@ export default function StudentsGrid({
                     >
                       <div className="student-card-avatar">
                         <AvatarRender config={safeAvatar} size={86} />
-                        <span className="student-card-level">Mla {level}</span>
                       </div>
                       <div className="student-card-info">
                         <span className="student-card-name">{s.full_name}</span>

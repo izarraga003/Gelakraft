@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2A3344"/>
+      <stop offset="100%" stop-color="#0F1820"/>
+    </linearGradient>
+    <linearGradient id="g-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E8C84B"/>
+      <stop offset="100%" stop-color="#B88A3C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo redondeado -->
+  <rect width="64" height="64" rx="14" fill="url(#bg-grad)"/>
+
+  <!-- Creciente lunar sutil de fondo (referencia a Mari) -->
+  <path d="M 50 18 A 10 10 0 0 0 50 38 A 8 8 0 0 1 50 18 Z" fill="#B88A3C" opacity="0.35"/>
+
+  <!-- Letra G en serif fina -->
+  <text x="32" y="46"
+        text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="42"
+        font-weight="700"
+        fill="url(#g-grad)"
+        font-style="italic">G</text>
+</svg>

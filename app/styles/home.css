@@ -625,28 +625,28 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
-.hero-card {
+.mythology-class-card {
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(184, 138, 60, 0.22);
   border-radius: 6px;
   padding: 28px 22px 24px;
   transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
 }
-.hero-card:hover {
+.mythology-class-card:hover {
   border-color: var(--urrea);
   background: rgba(255, 255, 255, 0.045);
   transform: translateY(-3px);
 }
-.hero-icon {
+.mythology-class-icon {
   color: var(--urrea-light);
   margin-bottom: 20px;
   transition: color 0.3s ease, transform 0.3s ease;
 }
-.hero-card:hover .hero-icon {
+.mythology-class-card:hover .mythology-class-icon {
   color: var(--sutea);
   transform: scale(1.05);
 }
-.hero-name {
+.mythology-class-name {
   font-family: var(--font-fraunces-stack);
   font-variation-settings: 'opsz' 144;
   font-size: 23px;
@@ -655,7 +655,7 @@
   margin-bottom: 6px;
   line-height: 1.1;
 }
-.hero-archetype {
+.mythology-class-archetype {
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.16em;
@@ -663,7 +663,7 @@
   margin-bottom: 16px;
   font-weight: 500;
 }
-.hero-desc {
+.mythology-class-desc {
   font-size: 13.5px;
   color: rgba(239, 229, 208, 0.75);
   line-height: 1.6;
