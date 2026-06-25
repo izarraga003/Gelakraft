@@ -65,40 +65,18 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
     return data.progress.find((p) => p.node_id === nodeId) ?? null
   }
 
-  function statusOf(nodeId: string):
-    | 'locked'
-    | 'available'
-    | 'pending_review'
-    | 'completed'
-    | 'failed' {
+  function statusOf(
+    nodeId: string
+  ): 'locked' | 'available' | 'pending_review' | 'completed' | 'failed' {
     const prog = progressFor(nodeId)
     if (!prog) return 'locked'
     return prog.status
   }
 
-  // El alumno solo ve nodos: completados, fallidos, disponibles, pending_review,
-  // y los nodos siguientes inmediatos (para que vea hacia dónde va).
-  function visibleNodes(): Node[] {
-    const visibleIds = new Set<string>()
-    for (const p of data.progress) visibleIds.add(p.node_id)
-    // También añadimos los "siguientes" de nodos completados (pista visual)
-    for (const p of data.progress) {
-      if (p.status === 'completed') {
-        for (const e of data.edges) {
-          if (e.from_node_id === p.node_id) visibleIds.add(e.to_node_id)
-        }
-      }
-    }
-    return data.nodes.filter((n) => visibleIds.has(n.id))
-  }
-
-  // Edges visibles: solo entre nodos visibles
-  function visibleEdges(): Edge[] {
-    const visIds = new Set(visibleNodes().map((n) => n.id))
-    return data.edges.filter(
-      (e) => visIds.has(e.from_node_id) && visIds.has(e.to_node_id)
-    )
-  }
+  // MOSTRAMOS TODOS LOS NODOS (incluso bloqueados). Los locked se muestran
+  // pero apagados/grises. Así el alumno ve el contorno de la aventura.
+  const visNodes = data.nodes
+  const visEdges = data.edges
 
   async function handleSubmit(nodeId: string, text: string) {
     const result = await submitStudentNode(studentId, nodeId, text)
@@ -106,7 +84,6 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
       alert(result.error)
       return
     }
-    // Recargar datos
     const res = await fetch(`/ikasle/misioa/${data.mission.id}/api/refresh`, {
       cache: 'no-store',
     })
@@ -116,9 +93,6 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
     }
     setOpenNode(null)
   }
-
-  const visNodes = visibleNodes()
-  const visEdges = visibleEdges()
 
   const completedCount = data.progress.filter(
     (p) => p.status === 'completed'
@@ -133,9 +107,7 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
         </Link>
         <div className="student-mission-title-block">
           <h1>{data.mission.name}</h1>
-          {data.mission.description && (
-            <p>{data.mission.description}</p>
-          )}
+          {data.mission.description && <p>{data.mission.description}</p>}
         </div>
         <div className="student-mission-progress">
           <span>
@@ -155,7 +127,6 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
       <div className="student-mission-map">
         <MissionMapBackground mapId={data.mission.background_id} />
 
-        {/* Edges visibles */}
         <svg
           className="student-mission-edges"
           viewBox="0 0 100 100"
@@ -173,16 +144,30 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
             >
               <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255, 253, 231, 0.7)" />
             </marker>
+            <marker
+              id="s-arrow-locked"
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth="4"
+              markerHeight="4"
+              orient="auto"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255, 253, 231, 0.25)" />
+            </marker>
           </defs>
           {visEdges.map((e, idx) => {
             const from = data.nodes.find((n) => n.id === e.from_node_id)
             const to = data.nodes.find((n) => n.id === e.to_node_id)
             if (!from || !to) return null
             const fromStatus = statusOf(from.id)
+            const isLocked = fromStatus === 'locked'
             const stroke =
               fromStatus === 'completed'
                 ? 'rgba(125, 216, 118, 0.85)'
-                : 'rgba(255, 253, 231, 0.45)'
+                : isLocked
+                ? 'rgba(255, 253, 231, 0.22)'
+                : 'rgba(255, 253, 231, 0.55)'
             return (
               <line
                 key={idx}
@@ -193,13 +178,12 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
                 stroke={stroke}
                 strokeWidth="0.4"
                 strokeDasharray={fromStatus === 'completed' ? 'none' : '1 1'}
-                markerEnd="url(#s-arrow)"
+                markerEnd={isLocked ? 'url(#s-arrow-locked)' : 'url(#s-arrow)'}
               />
             )
           })}
         </svg>
 
-        {/* Nodos visibles */}
         {visNodes.map((node) => {
           const status = statusOf(node.id)
           return (
@@ -232,12 +216,19 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
             </button>
           )
         })}
+
+        {visNodes.length === 0 && (
+          <div className="student-mission-empty">
+            Misio honek oraindik ez du helburuik. Itzuli geroago.
+          </div>
+        )}
       </div>
 
       {openNode && (
         <StudentNodeModal
           node={openNode}
           progress={progressFor(openNode.id)}
+          status={statusOf(openNode.id)}
           onClose={() => setOpenNode(null)}
           onSubmit={(text) => handleSubmit(openNode.id, text)}
         />
@@ -249,17 +240,18 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
 function StudentNodeModal({
   node,
   progress,
+  status,
   onClose,
   onSubmit,
 }: {
   node: Node
   progress: Progress | null
+  status: 'locked' | 'available' | 'pending_review' | 'completed' | 'failed'
   onClose: () => void
   onSubmit: (text: string) => void | Promise<void>
 }) {
   const [text, setText] = useState(progress?.submission_text ?? '')
   const [submitting, setSubmitting] = useState(false)
-  const status = progress?.status ?? 'locked'
 
   async function handleSubmit() {
     if (submitting) return
@@ -295,7 +287,6 @@ function StudentNodeModal({
             <p className="student-node-description">{node.description}</p>
           )}
 
-          {/* Render del contenido según tipo */}
           {node.content_type === 'youtube' && node.content_url && (
             <div className="student-node-video">
               <iframe
@@ -353,6 +344,11 @@ function StudentNodeModal({
               ⏳ Irakasleak berrikusten du
             </div>
           )}
+          {status === 'locked' && (
+            <div className="student-node-status student-node-status-locked">
+              🔒 Aurreko helburuak osatu behar dituzu hau desblokeatzeko
+            </div>
+          )}
 
           {status === 'available' && (
             <div className="form-field">
@@ -397,9 +393,7 @@ function StudentNodeModal({
 }
 
 function youtubeEmbedUrl(url: string): string {
-  // Convertir watch?v=XXX o youtu.be/XXX a /embed/XXX
-  const m =
-    url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/i)
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/i)
   if (m) return `https://www.youtube.com/embed/${m[1]}`
   return url
 }

@@ -17,6 +17,10 @@ import { getEffectivePowersForStudent } from '@/lib/powers/overrides'
 import { createServiceClient } from '@/lib/supabase/service'
 import StudentMissionsSection from '@/components/missions/StudentMissionsSection'
 
+// Forzar render dinámico para que las misiones recién creadas se vean
+// inmediatamente sin necesidad de hard refresh.
+export const dynamic = 'force-dynamic'
+
 export default async function StudentPanelPage() {
   const sessionStudent = await getStudent()
   if (!sessionStudent) {
@@ -53,24 +57,33 @@ export default async function StudentPanelPage() {
   const level = xpToLevel(student.xp)
   const teamMembers = team?.members ?? []
 
-  // Cargar poderes con overrides aplicados (el alumno usa iron-session,
-  // así que llamamos a una RPC SECURITY DEFINER para bypassar RLS).
   const effectivePowers = await getEffectivePowersForStudent(
     student.classroom_id,
     student.hero_class
   )
 
-  // Misiones activas del aula
-  const serviceClient = createServiceClient()
-  const { data: missionsData } = await serviceClient.rpc('get_student_missions', {
-    p_student_id: student.id,
-  })
-  const activeMissions = (missionsData ?? []) as Array<{
+  // Cargar misiones activas del aula
+  type ActiveMission = {
     id: string
     name: string
     description: string
     background_id: string
-  }>
+  }
+  let activeMissions: ActiveMission[] = []
+  try {
+    const serviceClient = createServiceClient()
+    const { data: missionsData, error: missionsError } = await serviceClient.rpc(
+      'get_student_missions',
+      { p_student_id: student.id }
+    )
+    if (missionsError) {
+      console.error('[Misioak] RPC error:', missionsError)
+    } else if (missionsData) {
+      activeMissions = missionsData as ActiveMission[]
+    }
+  } catch (err) {
+    console.error('[Misioak] Exception:', err)
+  }
 
   return (
     <div className="student-shell">
@@ -113,6 +126,11 @@ export default async function StudentPanelPage() {
           maxMana={student.max_mana}
         />
 
+        {/* MISIONES: si hay alguna activa, mostrarla prominente arriba */}
+        {activeMissions.length > 0 && (
+          <StudentMissionsSection missions={activeMissions} />
+        )}
+
         <div className="student-grid">
           <ClassroomRanking
             ranking={ranking}
@@ -133,10 +151,6 @@ export default async function StudentPanelPage() {
             powers={effectivePowers}
           />
         </div>
-
-        {activeMissions.length > 0 && (
-          <StudentMissionsSection missions={activeMissions} />
-        )}
       </main>
     </div>
   )

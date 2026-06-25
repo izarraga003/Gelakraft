@@ -973,3 +973,100 @@
   .node-editor-rewards { grid-template-columns: 1fr 1fr; }
   .student-mission-progress { width: 100%; }
 }
+/* ============================================
+   APPEND al final de app/styles/missions.css
+   ============================================ */
+
+/* Botón guardar de la misión */
+.mission-editor-save-btn {
+  background: var(--urrea);
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.18s;
+  letter-spacing: 0.01em;
+}
+.mission-editor-save-btn:hover:not(:disabled) {
+  background: #8C6529;
+}
+.mission-editor-save-btn:disabled {
+  background: rgba(184, 138, 60, 0.3);
+  cursor: not-allowed;
+  color: rgba(255, 255, 255, 0.7);
+}
+.mission-editor-save-btn-dirty {
+  background: var(--sugaar);
+  animation: save-btn-pulse 2s ease-in-out infinite;
+  box-shadow: 0 4px 14px rgba(194, 70, 23, 0.45);
+}
+.mission-editor-save-btn-dirty:hover:not(:disabled) {
+  background: #A13A14;
+}
+@keyframes save-btn-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.03); }
+}
+
+/* Banner "cambios sin guardar" */
+.mission-editor-dirty-banner {
+  background: rgba(194, 70, 23, 0.12);
+  border-bottom: 1.5px solid rgba(194, 70, 23, 0.35);
+  color: var(--sugaar);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px 24px;
+}
+
+/* Selector de predecesor en modal nuevo nodo */
+.node-editor-predecessor {
+  background: rgba(184, 138, 60, 0.08);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(184, 138, 60, 0.25);
+}
+.node-editor-hint-inline {
+  font-size: 11.5px;
+  color: var(--iluntze);
+  opacity: 0.75;
+  font-style: italic;
+  margin: 4px 0 0;
+}
+
+/* Banner informativo (primer nodo) */
+.node-editor-info-banner {
+  background: rgba(79, 139, 58, 0.12);
+  border: 1.5px solid rgba(79, 139, 58, 0.35);
+  color: #2D7A1F;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Empty state en mapa del alumno */
+.student-mission-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 16px 28px;
+  border-radius: 10px;
+  font-family: var(--font-fraunces-stack);
+  font-size: 16px;
+  font-style: italic;
+}
+
+/* Status locked en modal del alumno */
+.student-node-status-locked {
+  background: rgba(184, 138, 60, 0.15);
+  color: var(--iluntze);
+}
