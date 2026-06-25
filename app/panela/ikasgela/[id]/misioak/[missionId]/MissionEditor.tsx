@@ -36,6 +36,41 @@ type Props = {
   initialProgress: StudentProgressRow[]
 }
 
+// IDs locales (no llegan al servidor hasta Gorde)
+function localId() {
+  return `local-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`
+}
+
+function nodesEqual(a: MissionNode, b: MissionNode): boolean {
+  return (
+    a.title === b.title &&
+    a.description === b.description &&
+    a.position_x === b.position_x &&
+    a.position_y === b.position_y &&
+    a.content_type === b.content_type &&
+    a.content_url === b.content_url &&
+    a.content_text === b.content_text &&
+    a.validation_type === b.validation_type &&
+    a.xp_reward === b.xp_reward &&
+    a.hearts_delta === b.hearts_delta &&
+    a.mana_reward === b.mana_reward &&
+    a.hearts_penalty === b.hearts_penalty &&
+    a.is_start === b.is_start
+  )
+}
+
+function missionEqual(a: Mission, b: Mission): boolean {
+  return (
+    a.name === b.name &&
+    a.description === b.description &&
+    a.background_id === b.background_id &&
+    a.is_active === b.is_active &&
+    a.final_xp_reward === b.final_xp_reward &&
+    a.final_hearts_reward === b.final_hearts_reward &&
+    a.final_mana_reward === b.final_mana_reward
+  )
+}
+
 export default function MissionEditor({
   classroomId,
   classroomName,
@@ -47,15 +82,19 @@ export default function MissionEditor({
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('map')
 
+  // Estado "guardado" (último confirmado en server)
   const [savedMission, setSavedMission] = useState<Mission>(initialMission)
+  const [savedNodes, setSavedNodes] = useState<MissionNode[]>(initialNodes)
+  const [savedEdges, setSavedEdges] = useState<MissionEdge[]>(initialEdges)
+
+  // Estado "draft" (lo que ve el usuario)
   const [draftMission, setDraftMission] = useState<Mission>(initialMission)
-  const [nodes, setNodes] = useState<MissionNode[]>(initialNodes)
-  const [edges, setEdges] = useState<MissionEdge[]>(initialEdges)
+  const [draftNodes, setDraftNodes] = useState<MissionNode[]>(initialNodes)
+  const [draftEdges, setDraftEdges] = useState<MissionEdge[]>(initialEdges)
+  const [deletedEdgeIds, setDeletedEdgeIds] = useState<Set<string>>(new Set())
 
   const [editingNode, setEditingNode] = useState<MissionNode | null>(null)
   const [isNewNode, setIsNewNode] = useState(false)
-  const [connectingFrom, setConnectingFrom] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
   const [saveOk, setSaveOk] = useState<null | 'ok' | 'err'>(null)
 
   const mapRef = useRef<HTMLDivElement | null>(null)
@@ -67,33 +106,34 @@ export default function MissionEditor({
   } | null>(null)
 
   const validationIssues = useMemo(
-    () => validateMission(nodes, edges),
-    [nodes, edges]
+    () => validateMission(draftNodes, draftEdges),
+    [draftNodes, draftEdges]
   )
 
-  const isDirty = useMemo(
-    () =>
-      JSON.stringify({
-        name: draftMission.name,
-        description: draftMission.description,
-        background_id: draftMission.background_id,
-        is_active: draftMission.is_active,
-        final_xp_reward: draftMission.final_xp_reward,
-        final_hearts_reward: draftMission.final_hearts_reward,
-        final_mana_reward: draftMission.final_mana_reward,
-      }) !==
-      JSON.stringify({
-        name: savedMission.name,
-        description: savedMission.description,
-        background_id: savedMission.background_id,
-        is_active: savedMission.is_active,
-        final_xp_reward: savedMission.final_xp_reward,
-        final_hearts_reward: savedMission.final_hearts_reward,
-        final_mana_reward: savedMission.final_mana_reward,
-      }),
-    [draftMission, savedMission]
-  )
+  // Detectar cambios sin guardar
+  const isDirty = useMemo(() => {
+    if (!missionEqual(draftMission, savedMission)) return true
+    if (draftNodes.length !== savedNodes.length) return true
+    for (const d of draftNodes) {
+      const s = savedNodes.find((n) => n.id === d.id)
+      if (!s) return true
+      if (!nodesEqual(s, d)) return true
+    }
+    // Edges nuevos (id local)
+    if (draftEdges.some((e) => e.id.startsWith('local-'))) return true
+    // Edges eliminados
+    if (deletedEdgeIds.size > 0) return true
+    return false
+  }, [
+    draftMission,
+    savedMission,
+    draftNodes,
+    savedNodes,
+    draftEdges,
+    deletedEdgeIds,
+  ])
 
+  // Beforeunload warning
   useEffect(() => {
     if (!isDirty) return
     function onBeforeUnload(e: BeforeUnloadEvent) {
@@ -104,31 +144,114 @@ export default function MissionEditor({
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [isDirty])
 
-  async function handleSaveMission() {
-    setSaving(true)
+  // ============================================================
+  // GUARDAR TODO
+  // ============================================================
+  async function handleSaveAll() {
     setSaveOk(null)
-    const result = await updateMission(draftMission.id, {
-      name: draftMission.name,
-      description: draftMission.description,
-      background_id: draftMission.background_id,
-      is_active: draftMission.is_active,
-      final_xp_reward: draftMission.final_xp_reward,
-      final_hearts_reward: draftMission.final_hearts_reward,
-      final_mana_reward: draftMission.final_mana_reward,
-    })
-    setSaving(false)
-    if (result.success) {
+    try {
+      // 1. Misión
+      if (!missionEqual(draftMission, savedMission)) {
+        const r = await updateMission(draftMission.id, {
+          name: draftMission.name,
+          description: draftMission.description,
+          background_id: draftMission.background_id,
+          is_active: draftMission.is_active,
+          final_xp_reward: draftMission.final_xp_reward,
+          final_hearts_reward: draftMission.final_hearts_reward,
+          final_mana_reward: draftMission.final_mana_reward,
+        })
+        if (!r.success) throw new Error(r.error)
+      }
+
+      // 2. Nodos modificados (no nuevos — los nuevos ya están en server)
+      for (const d of draftNodes) {
+        const s = savedNodes.find((n) => n.id === d.id)
+        if (!s) continue
+        if (!nodesEqual(s, d)) {
+          const r = await updateNode(d.id, {
+            title: d.title,
+            description: d.description,
+            position_x: d.position_x,
+            position_y: d.position_y,
+            content_type: d.content_type,
+            content_url: d.content_url,
+            content_text: d.content_text,
+            validation_type: d.validation_type,
+            xp_reward: d.xp_reward,
+            hearts_delta: d.hearts_delta,
+            mana_reward: d.mana_reward,
+            hearts_penalty: d.hearts_penalty,
+          })
+          if (!r.success) throw new Error(r.error)
+        }
+      }
+
+      // 3. Start node si cambió
+      const draftStart = draftNodes.find((n) => n.is_start)
+      const savedStart = savedNodes.find((n) => n.is_start)
+      if (draftStart && draftStart.id !== savedStart?.id) {
+        await setStartNode(draftMission.id, draftStart.id)
+      }
+
+      // 4. Edges nuevos (con id local)
+      const finalEdges: MissionEdge[] = []
+      for (const e of draftEdges) {
+        if (e.id.startsWith('local-')) {
+          const r = await createEdge(draftMission.id, {
+            from_node_id: e.from_node_id,
+            to_node_id: e.to_node_id,
+            condition: e.condition,
+          })
+          if (r.success) finalEdges.push(r.edge)
+        } else {
+          finalEdges.push(e)
+        }
+      }
+
+      // 5. Edges eliminados (los reales)
+      for (const edgeId of deletedEdgeIds) {
+        await deleteEdge(edgeId)
+      }
+
+      // Confirmar estado guardado
       setSavedMission(draftMission)
+      setSavedNodes(draftNodes)
+      setSavedEdges(finalEdges)
+      setDraftEdges(finalEdges)
+      setDeletedEdgeIds(new Set())
       setSaveOk('ok')
       window.setTimeout(() => setSaveOk(null), 2200)
-    } else {
+    } catch (err) {
       setSaveOk('err')
-      alert(`Errorea gordetzean: ${result.error}`)
+      const msg = err instanceof Error ? err.message : 'Errore ezezaguna'
+      alert(`Errorea gordetzean: ${msg}`)
     }
   }
 
+  // ============================================================
+  // DESCARTAR cambios
+  // ============================================================
+  function handleDiscard() {
+    if (!window.confirm('Gorde gabeko aldaketak galduko dira. Ziur?')) return
+    setDraftMission(savedMission)
+    setDraftNodes(savedNodes)
+    setDraftEdges(savedEdges)
+    setDeletedEdgeIds(new Set())
+  }
+
+  // ============================================================
+  // DUPLICAR
+  // ============================================================
   async function handleDuplicate() {
-    if (!window.confirm('Misio honen kopia bat sortu nahi duzu?')) return
+    if (isDirty) {
+      if (
+        !window.confirm(
+          'Aldaketak gabe daude. Bikoiztu aurretik gorde nahi duzu? OK = bikoiztu hala ere, Utzi = gelditu.'
+        )
+      )
+        return
+    }
     const result = await duplicateMission(savedMission.id)
     if (!result.success) {
       alert(`Errorea: ${result.error}`)
@@ -137,8 +260,12 @@ export default function MissionEditor({
     router.push(`/panela/ikasgela/${classroomId}/misioak/${result.newMissionId}`)
   }
 
+  // ============================================================
+  // NODOS
+  // ============================================================
+  // Crear nodo es síncrono (necesitamos el ID real)
   async function handleAddNode(percentX: number, percentY: number) {
-    const isFirst = nodes.length === 0
+    const isFirst = draftNodes.length === 0
     const result = await createNode(savedMission.id, {
       title: isFirst ? 'Lehen helburua' : 'Helburu berria',
       position_x: percentX,
@@ -149,16 +276,13 @@ export default function MissionEditor({
       alert(result.error)
       return
     }
-    setNodes((prev) => [...prev, result.node])
+    setSavedNodes((prev) => [...prev, result.node])
+    setDraftNodes((prev) => [...prev, result.node])
     setIsNewNode(true)
     setEditingNode(result.node)
   }
 
   function onMapClick(e: React.MouseEvent) {
-    if (connectingFrom) {
-      setConnectingFrom(null)
-      return
-    }
     if (!mapRef.current) return
     if ((e.target as HTMLElement).closest('.mission-node-marker')) return
     const rect = mapRef.current.getBoundingClientRect()
@@ -172,13 +296,6 @@ export default function MissionEditor({
 
   function onNodePointerDown(e: React.PointerEvent, node: MissionNode) {
     if (e.button !== 0 && e.pointerType === 'mouse') return
-    if (connectingFrom) {
-      if (connectingFrom !== node.id) {
-        void handleCreateEdge(connectingFrom, node.id, 'always')
-      }
-      setConnectingFrom(null)
-      return
-    }
     dragRef.current = {
       nodeId: node.id,
       startX: e.clientX,
@@ -199,7 +316,8 @@ export default function MissionEditor({
       const rect = mapRef.current.getBoundingClientRect()
       const x = ((e.clientX - rect.left) / rect.width) * 100
       const y = ((e.clientY - rect.top) / rect.height) * 100
-      setNodes((prev) =>
+      // Solo en draft, no en server
+      setDraftNodes((prev) =>
         prev.map((n) =>
           n.id === drag.nodeId
             ? {
@@ -211,25 +329,18 @@ export default function MissionEditor({
         )
       )
     }
-    async function onUp() {
+    function onUp() {
       const drag = dragRef.current
       dragRef.current = null
       if (!drag) return
-      if (drag.moved) {
-        const n = nodes.find((nn) => nn.id === drag.nodeId)
-        if (n) {
-          await updateNode(n.id, {
-            position_x: n.position_x,
-            position_y: n.position_y,
-          })
-        }
-      } else {
-        const n = nodes.find((nn) => nn.id === drag.nodeId)
+      if (!drag.moved) {
+        const n = draftNodes.find((nn) => nn.id === drag.nodeId)
         if (n) {
           setIsNewNode(false)
           setEditingNode(n)
         }
       }
+      // Si moved, no hacemos nada — ya está en el draft local
     }
     document.addEventListener('pointermove', onMove, { passive: true })
     document.addEventListener('pointerup', onUp)
@@ -237,15 +348,71 @@ export default function MissionEditor({
       document.removeEventListener('pointermove', onMove)
       document.removeEventListener('pointerup', onUp)
     }
-  }, [nodes])
+  }, [draftNodes])
 
-  async function handleCreateEdge(
+  // Eliminar nodo: síncrono (también limpia edges)
+  async function handleDeleteNode(nodeId: string) {
+    if (!window.confirm('Helburu hau eta bere konexioak ezabatu?')) return
+    const result = await deleteNode(nodeId)
+    if (result.success) {
+      setSavedNodes((prev) => prev.filter((n) => n.id !== nodeId))
+      setDraftNodes((prev) => prev.filter((n) => n.id !== nodeId))
+      // Quitar edges del draft Y del saved que referencian este nodo
+      setSavedEdges((prev) =>
+        prev.filter((e) => e.from_node_id !== nodeId && e.to_node_id !== nodeId)
+      )
+      setDraftEdges((prev) =>
+        prev.filter((e) => e.from_node_id !== nodeId && e.to_node_id !== nodeId)
+      )
+      // Limpiar deletedEdgeIds que ya no son válidos
+      setDeletedEdgeIds(new Set())
+      setEditingNode(null)
+      setIsNewNode(false)
+    }
+  }
+
+  // Cancelar nodo nuevo: lo eliminamos del server (porque ya está creado)
+  async function handleCancelNewNode(nodeId: string) {
+    const result = await deleteNode(nodeId)
+    if (result.success) {
+      setSavedNodes((prev) => prev.filter((n) => n.id !== nodeId))
+      setDraftNodes((prev) => prev.filter((n) => n.id !== nodeId))
+    }
+    setEditingNode(null)
+    setIsNewNode(false)
+  }
+
+  function handleSetStart(nodeId: string) {
+    setDraftNodes((prev) => prev.map((n) => ({ ...n, is_start: n.id === nodeId })))
+  }
+
+  // Aplicar cambios del modal de nodo SOLO al draft local
+  function handleApplyNodeEdit(updated: MissionNode, predecessorId?: string) {
+    setDraftNodes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
+    if (predecessorId) {
+      const newEdge: MissionEdge = {
+        id: localId(),
+        mission_id: savedMission.id,
+        from_node_id: predecessorId,
+        to_node_id: updated.id,
+        condition: 'always',
+      }
+      setDraftEdges((prev) => [...prev, newEdge])
+    }
+    setEditingNode(null)
+    setIsNewNode(false)
+  }
+
+  // ============================================================
+  // EDGES (todo en draft)
+  // ============================================================
+  function handleAddEdgeLocal(
     fromId: string,
     toId: string,
-    condition: 'always' | 'success' | 'failure' = 'always'
+    condition: 'always' | 'success' | 'failure'
   ) {
     if (
-      edges.some(
+      draftEdges.some(
         (e) =>
           e.from_node_id === fromId &&
           e.to_node_id === toId &&
@@ -253,66 +420,34 @@ export default function MissionEditor({
       )
     )
       return
-    const result = await createEdge(savedMission.id, {
+    const newEdge: MissionEdge = {
+      id: localId(),
+      mission_id: savedMission.id,
       from_node_id: fromId,
       to_node_id: toId,
       condition,
-    })
-    if (result.success) setEdges((prev) => [...prev, result.edge])
+    }
+    setDraftEdges((prev) => [...prev, newEdge])
   }
 
-  async function handleDeleteEdge(edgeId: string) {
-    if (!window.confirm('Konexioa ezabatu?')) return
-    const result = await deleteEdge(edgeId)
-    if (result.success) setEdges((prev) => prev.filter((e) => e.id !== edgeId))
-  }
-
-  async function handleDeleteNode(nodeId: string) {
-    if (!window.confirm('Helburu hau eta bere konexioak ezabatu?')) return
-    const result = await deleteNode(nodeId)
-    if (result.success) {
-      setNodes((prev) => prev.filter((n) => n.id !== nodeId))
-      setEdges((prev) =>
-        prev.filter((e) => e.from_node_id !== nodeId && e.to_node_id !== nodeId)
-      )
-      setEditingNode(null)
+  function handleRemoveEdgeLocal(edgeId: string) {
+    setDraftEdges((prev) => prev.filter((e) => e.id !== edgeId))
+    if (!edgeId.startsWith('local-')) {
+      setDeletedEdgeIds((prev) => new Set(prev).add(edgeId))
     }
   }
 
-  async function handleSetStart(nodeId: string) {
-    await setStartNode(savedMission.id, nodeId)
-    setNodes((prev) => prev.map((n) => ({ ...n, is_start: n.id === nodeId })))
-  }
-
-  async function handleSaveNode(updated: MissionNode, predecessorId?: string) {
-    const result = await updateNode(updated.id, updated)
-    if (!result.success) {
-      alert(result.error)
-      return
-    }
-    setNodes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)))
-    if (predecessorId) {
-      await handleCreateEdge(predecessorId, updated.id, 'always')
-    }
-    setEditingNode(null)
-    setIsNewNode(false)
-  }
-
-  async function handleCancelNewNode(nodeId: string) {
-    const result = await deleteNode(nodeId)
-    if (result.success) {
-      setNodes((prev) => prev.filter((n) => n.id !== nodeId))
-    }
-    setEditingNode(null)
-    setIsNewNode(false)
-  }
-
+  // ============================================================
+  // ELIMINAR MISIÓN — fix 404
+  // ============================================================
   async function handleDeleteMission() {
     if (!window.confirm('Misio osoa ezabatuko da. Ziur?')) return
-    const result = await deleteMission(savedMission.id)
-    if (result.success) {
-      window.location.href = `/panela/ikasgela/${classroomId}/misioak`
-    }
+    // Navegamos ANTES de borrar para no quedar en la página borrada
+    router.push(`/panela/ikasgela/${classroomId}/misioak`)
+    // Esperar un tick para que la navegación arranque
+    await new Promise((r) => window.setTimeout(r, 50))
+    await deleteMission(savedMission.id)
+    router.refresh()
   }
 
   const currentMap = getMissionMap(draftMission.background_id)
@@ -337,20 +472,17 @@ export default function MissionEditor({
         <MissionValidationBadge issues={validationIssues} />
 
         <div className="mission-editor-header-actions">
-          {tab === 'map' && (
+          {isDirty && (
             <button
               type="button"
-              className="mission-editor-action"
-              onClick={() => {
-                if (connectingFrom) setConnectingFrom(null)
-                else if (nodes[0]) setConnectingFrom(nodes[0].id)
-                else alert('Sortu lehenik helburu bat.')
-              }}
-              title="Konektatu nodoak"
+              className="mission-editor-discard-btn"
+              onClick={handleDiscard}
+              title="Aldaketak baztertu"
             >
-              {connectingFrom ? '✕ Utzi konektatzea' : '🔗 Konektatu nodoak'}
+              ↺ Baztertu
             </button>
           )}
+
           <button
             type="button"
             className="mission-editor-action"
@@ -364,21 +496,17 @@ export default function MissionEditor({
             className={`mission-editor-save-btn ${
               isDirty ? 'mission-editor-save-btn-dirty' : ''
             }`}
-            onClick={handleSaveMission}
-            disabled={!isDirty || saving}
+            onClick={handleSaveAll}
+            disabled={!isDirty}
           >
-            {saveOk === 'ok'
-              ? '✓ Gordeta'
-              : isDirty
-              ? '● Gorde aldaketak'
-              : 'Gordeta'}
+            {saveOk === 'ok' ? '✓ Gordeta' : isDirty ? '● Gorde aldaketak' : 'Dena gordeta'}
           </AsyncButton>
         </div>
       </header>
 
       {isDirty && (
         <div className="mission-editor-dirty-banner">
-          Aldaketak gorde gabe daude. Sakatu «Gorde aldaketak» finkatzeko.
+          Gorde gabeko aldaketak dituzu. Sakatu «Gorde aldaketak» finkatzeko, edo «Baztertu» kentzeko.
         </div>
       )}
 
@@ -389,14 +517,21 @@ export default function MissionEditor({
           className={`mission-editor-tab ${tab === 'map' ? 'mission-editor-tab-active' : ''}`}
           onClick={() => setTab('map')}
         >
-          🗺️ Mapa eta nodoak
+          <span className="mission-editor-tab-icon">🗺️</span>
+          <span>Mapa eta nodoak</span>
         </button>
         <button
           type="button"
           className={`mission-editor-tab ${tab === 'progress' ? 'mission-editor-tab-active' : ''}`}
           onClick={() => setTab('progress')}
         >
-          📊 Klasearen aurrerapena
+          <span className="mission-editor-tab-icon">📊</span>
+          <span>Klasearen aurrerapena</span>
+          {initialProgress.some((r) => r.pending_review > 0) && (
+            <span className="mission-editor-tab-badge">
+              {initialProgress.reduce((a, r) => a + r.pending_review, 0)}
+            </span>
+          )}
         </button>
       </div>
 
@@ -449,9 +584,9 @@ export default function MissionEditor({
                   <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF8B6A" />
                 </marker>
               </defs>
-              {edges.map((edge) => {
-                const from = nodes.find((n) => n.id === edge.from_node_id)
-                const to = nodes.find((n) => n.id === edge.to_node_id)
+              {draftEdges.map((edge) => {
+                const from = draftNodes.find((n) => n.id === edge.from_node_id)
+                const to = draftNodes.find((n) => n.id === edge.to_node_id)
                 if (!from || !to) return null
                 const strokeColor =
                   edge.condition === 'success'
@@ -472,7 +607,9 @@ export default function MissionEditor({
                     markerEnd={`url(#arrow-${edge.condition})`}
                     onClick={(e) => {
                       e.stopPropagation()
-                      void handleDeleteEdge(edge.id)
+                      if (window.confirm('Konexioa kendu?')) {
+                        handleRemoveEdgeLocal(edge.id)
+                      }
                     }}
                     style={{ cursor: 'pointer', pointerEvents: 'all' }}
                   />
@@ -480,13 +617,13 @@ export default function MissionEditor({
               })}
             </svg>
 
-            {nodes.map((node) => (
+            {draftNodes.map((node) => (
               <button
                 key={node.id}
                 type="button"
                 className={`mission-node-marker ${
                   node.is_start ? 'mission-node-marker-start' : ''
-                } ${connectingFrom === node.id ? 'mission-node-marker-connecting' : ''}`}
+                }`}
                 style={{
                   left: `${node.position_x}%`,
                   top: `${node.position_y}%`,
@@ -505,7 +642,7 @@ export default function MissionEditor({
               </button>
             ))}
 
-            {nodes.length === 0 && (
+            {draftNodes.length === 0 && (
               <div className="mission-editor-hint">
                 Sakatu mapan lehen helburua sortzeko
               </div>
@@ -636,8 +773,8 @@ export default function MissionEditor({
             <section className="mission-editor-section">
               <h3>Estatistikak</h3>
               <ul className="mission-editor-stats">
-                <li>📍 {nodes.length} helburu</li>
-                <li>🔗 {edges.length} konexio</li>
+                <li>📍 {draftNodes.length} helburu</li>
+                <li>🔗 {draftEdges.length} konexio</li>
                 <li>🏫 {classroomName}</li>
               </ul>
             </section>
@@ -664,9 +801,9 @@ export default function MissionEditor({
         <NodeEditorModal
           node={editingNode}
           isNewNode={isNewNode}
-          isOnlyNode={nodes.length === 1}
-          allNodes={nodes}
-          edges={edges}
+          isOnlyNode={draftNodes.length === 1}
+          allNodes={draftNodes}
+          edges={draftEdges}
           onClose={() => {
             if (isNewNode) {
               void handleCancelNewNode(editingNode.id)
@@ -674,17 +811,13 @@ export default function MissionEditor({
               setEditingNode(null)
             }
           }}
-          onSave={handleSaveNode}
+          onApply={handleApplyNodeEdit}
           onDelete={() => handleDeleteNode(editingNode.id)}
           onSetStart={() => handleSetStart(editingNode.id)}
-          onCreateEdge={async (toId, condition) => {
-            await handleCreateEdge(editingNode.id, toId, condition)
-          }}
-          onDeleteEdge={async (edgeId) => {
-            const result = await deleteEdge(edgeId)
-            if (result.success)
-              setEdges((prev) => prev.filter((e) => e.id !== edgeId))
-          }}
+          onAddEdge={(toId, condition) =>
+            handleAddEdgeLocal(editingNode.id, toId, condition)
+          }
+          onRemoveEdge={(edgeId) => handleRemoveEdgeLocal(edgeId)}
         />
       )}
     </div>
@@ -692,7 +825,7 @@ export default function MissionEditor({
 }
 
 // ============================================================
-// NodeEditorModal (idéntico al de v2)
+// NodeEditorModal — ahora "Aplikatu" en lugar de "Gorde"
 // ============================================================
 function NodeEditorModal({
   node,
@@ -701,11 +834,11 @@ function NodeEditorModal({
   allNodes,
   edges,
   onClose,
-  onSave,
+  onApply,
   onDelete,
   onSetStart,
-  onCreateEdge,
-  onDeleteEdge,
+  onAddEdge,
+  onRemoveEdge,
 }: {
   node: MissionNode
   isNewNode: boolean
@@ -713,14 +846,11 @@ function NodeEditorModal({
   allNodes: MissionNode[]
   edges: MissionEdge[]
   onClose: () => void
-  onSave: (n: MissionNode, predecessorId?: string) => Promise<void>
+  onApply: (n: MissionNode, predecessorId?: string) => void
   onDelete: () => void
   onSetStart: () => void
-  onCreateEdge: (
-    toId: string,
-    condition: 'always' | 'success' | 'failure'
-  ) => Promise<void>
-  onDeleteEdge: (edgeId: string) => Promise<void>
+  onAddEdge: (toId: string, condition: 'always' | 'success' | 'failure') => void
+  onRemoveEdge: (edgeId: string) => void
 }) {
   const [draft, setDraft] = useState<MissionNode>(node)
   const [predecessorId, setPredecessorId] = useState<string>('')
@@ -732,8 +862,7 @@ function NodeEditorModal({
   const outgoingEdges = edges.filter((e) => e.from_node_id === node.id)
   const availableTargets = allNodes.filter(
     (n) =>
-      n.id !== node.id &&
-      !outgoingEdges.some((e) => e.to_node_id === n.id)
+      n.id !== node.id && !outgoingEdges.some((e) => e.to_node_id === n.id)
   )
 
   return (
@@ -955,7 +1084,7 @@ function NodeEditorModal({
                         <span>→ {target?.title ?? '(ezabatua)'}</span>
                         <button
                           type="button"
-                          onClick={() => void onDeleteEdge(edge.id)}
+                          onClick={() => onRemoveEdge(edge.id)}
                           className="node-editor-edge-delete"
                         >
                           ✕
@@ -991,17 +1120,18 @@ function NodeEditorModal({
                     <option value="success">Asmatzen badu</option>
                     <option value="failure">Huts egiten badu</option>
                   </select>
-                  <AsyncButton
+                  <button
+                    type="button"
                     className="node-editor-edge-add-btn"
-                    onClick={async () => {
+                    onClick={() => {
                       if (!newEdgeTo) return
-                      await onCreateEdge(newEdgeTo, newEdgeCondition)
+                      onAddEdge(newEdgeTo, newEdgeCondition)
                       setNewEdgeTo('')
                     }}
                     disabled={!newEdgeTo}
                   >
                     + Konektatu
-                  </AsyncButton>
+                  </button>
                 </div>
               )}
             </div>
@@ -1034,16 +1164,17 @@ function NodeEditorModal({
             className="panel-cta-btn-secondary"
             onClick={onClose}
           >
-            {isNewNode ? 'Utzi (ezabatu)' : 'Utzi'}
+            {isNewNode ? 'Utzi (ezabatu)' : 'Itxi'}
           </button>
-          <AsyncButton
+          <button
+            type="button"
             className="panel-cta-btn"
             onClick={() =>
-              onSave(draft, isNewNode ? predecessorId || undefined : undefined)
+              onApply(draft, isNewNode ? predecessorId || undefined : undefined)
             }
           >
-            {isNewNode ? 'Sortu nodoa' : 'Gorde'}
-          </AsyncButton>
+            {isNewNode ? 'Sortu nodoa' : 'Aplikatu'}
+          </button>
         </footer>
       </div>
     </div>

@@ -1,0 +1,175 @@
+/* ============================================
+   APPEND v4 — fix nodos alumno, tabs nuevos, ajustes
+   PEGAR al final de app/styles/missions.css
+   ============================================ */
+
+/* ========== FIX nodos invisibles del alumno ========== */
+/* Sobrescribir el wrapper que rompía el posicionamiento en v3 */
+.student-mission-floats-anchor {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.student-mission-floats-anchor .student-mission-float {
+  position: relative;
+  top: -42px;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 800;
+  font-size: 14px;
+  padding: 4px 11px;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1.5px solid;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  animation: student-mission-float-up 2.2s ease-out forwards;
+}
+.student-mission-float-gain {
+  color: #2D7A1F;
+  border-color: rgba(79, 139, 58, 0.6);
+}
+.student-mission-float-loss {
+  color: var(--sugaar);
+  border-color: rgba(194, 70, 23, 0.6);
+}
+@keyframes student-mission-float-up {
+  0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+  15%  { transform: translateY(-8px) scale(1.1); opacity: 1; }
+  80%  { transform: translateY(-44px) scale(1); opacity: 1; }
+  100% { transform: translateY(-58px) scale(0.9); opacity: 0; }
+}
+
+.student-mission-node-flash {
+  animation: node-completion-flash 1.8s ease-out;
+}
+@keyframes node-completion-flash {
+  0%   { box-shadow: 0 0 0 0 rgba(125, 216, 118, 0); }
+  20%  { box-shadow: 0 0 0 16px rgba(125, 216, 118, 0.55); }
+  100% { box-shadow: 0 0 0 0 rgba(125, 216, 118, 0); }
+}
+
+/* ========== Tabs editor — rediseñados ========== */
+.mission-editor-tabs {
+  display: flex;
+  gap: 8px;
+  background: var(--argi);
+  padding: 14px 24px 0;
+  border-bottom: 1.5px solid rgba(184, 138, 60, 0.18);
+}
+.mission-editor-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 12px 22px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--iluntze);
+  position: relative;
+  border-radius: 10px 10px 0 0;
+  transition: all 0.2s;
+  border: 1.5px solid transparent;
+  border-bottom: none;
+}
+.mission-editor-tab:hover {
+  background: rgba(184, 138, 60, 0.08);
+  color: var(--ilun);
+}
+.mission-editor-tab-active {
+  background: white;
+  color: var(--ilun);
+  border-color: rgba(184, 138, 60, 0.3);
+  box-shadow: 0 -4px 12px rgba(184, 138, 60, 0.08);
+}
+.mission-editor-tab-active::after {
+  /* tapar la línea inferior del contenedor para conectar visualmente */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1.5px;
+  height: 3px;
+  background: white;
+}
+.mission-editor-tab-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.mission-editor-tab-badge {
+  background: var(--sugaar);
+  color: white;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 50px;
+  margin-left: 2px;
+  letter-spacing: 0.04em;
+}
+
+/* ========== Botón baztertu ========== */
+.mission-editor-discard-btn {
+  background: white;
+  border: 1.5px solid rgba(194, 70, 23, 0.3);
+  color: var(--sugaar);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mission-editor-discard-btn:hover {
+  background: rgba(194, 70, 23, 0.05);
+  border-color: var(--sugaar);
+}
+
+/* ========== Ajustes panel tabs cuando solo hay 1 tab activa ========== */
+.mission-editor-progress-tab {
+  background: var(--argi);
+  padding: 32px 24px;
+  flex: 1;
+  overflow-y: auto;
+  border-top: 0;
+}
+
+/* ========== Confeti del overlay victoria — más visible ========== */
+.victory-confetti-piece {
+  width: 11px;
+  height: 19px;
+}
+
+/* ========== Responsive de los tabs en móvil ========== */
+@media (max-width: 900px) {
+  .mission-editor-tabs {
+    padding: 10px 12px 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mission-editor-tab {
+    padding: 10px 14px 12px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+}
+
+/* ========== Mejora del banner dirty ========== */
+.mission-editor-dirty-banner {
+  background: linear-gradient(90deg,
+    rgba(232, 200, 75, 0.18),
+    rgba(232, 200, 75, 0.08));
+  border-left: 4px solid var(--urrea);
+  color: var(--ilun);
+  padding: 12px 24px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
