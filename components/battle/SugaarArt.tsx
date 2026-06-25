@@ -43,20 +43,18 @@ export default function SugaarArt({ animation }: SugaarArtProps) {
         className="sugaar-overlay"
       >
         <defs>
-          {/* Fuego: gradiente radial cálido */}
-          <radialGradient id="overlay-fire" cx="50%" cy="40%" r="70%">
-            <stop offset="0%" stopColor="#FFFDE7" />
-            <stop offset="15%" stopColor="#FFEB3B" />
-            <stop offset="40%" stopColor="#FF8B3A" />
-            <stop offset="75%" stopColor="#C24617" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#8C1F0A" stopOpacity="0" />
+          {/* Glow rojo cálido para el calor de la boca */}
+          <radialGradient id="overlay-mouth-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FF6B35" stopOpacity="0.85" />
+            <stop offset="40%" stopColor="#C24617" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#C24617" stopOpacity="0" />
           </radialGradient>
 
-          {/* Glow ojo */}
-          <radialGradient id="overlay-eye-glow" cx="50%" cy="50%" r="55%">
-            <stop offset="0%" stopColor="rgba(255, 215, 64, 0.9)" />
-            <stop offset="40%" stopColor="rgba(255, 138, 60, 0.45)" />
-            <stop offset="100%" stopColor="rgba(255, 138, 60, 0)" />
+          {/* Glow amarillo muy concentrado para reforzar los ojos */}
+          <radialGradient id="overlay-eye-spot" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FFEB3B" stopOpacity="0.9" />
+            <stop offset="60%" stopColor="#FF8B3A" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#FF8B3A" stopOpacity="0" />
           </radialGradient>
 
           {/* Humo gris translúcido */}
@@ -65,145 +63,86 @@ export default function SugaarArt({ animation }: SugaarArtProps) {
             <stop offset="100%" stopColor="rgba(40, 20, 18, 0)" />
           </radialGradient>
 
-          {/* Filtros glow */}
-          <filter id="overlay-fire-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="1.5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          {/* Blur fuerte para que los glows sean difusos */}
+          <filter id="soft-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="0.8" />
           </filter>
         </defs>
 
-        {/* ============== GLOW OJOS ============== */}
-        <g className="sugaar-eyes">
-          {/* Ojo izquierdo */}
-          <ellipse cx="38" cy="31" rx="4" ry="2.5" fill="url(#overlay-eye-glow)">
+        {/* ============== CALOR EN LA BOCA ==============
+            En lugar de dibujar una llama con bordes (que parecía sticker),
+            usamos un glow radial difuso con mix-blend-mode: screen para que
+            se SUME al color ya existente de la boca abierta en la imagen.
+            El interior oscuro de la boca + glow rojizo encima = sensación
+            de calor brillante saliendo de dentro. */}
+        <g className="sugaar-fire" style={{ mixBlendMode: 'screen' }}>
+          {/* Glow principal centrado en la boca */}
+          <ellipse
+            cx="50"
+            cy="51"
+            rx="10"
+            ry="13"
+            fill="url(#overlay-mouth-glow)"
+            filter="url(#soft-glow)"
+          >
+            <animate
+              attributeName="rx"
+              values="9;11.5;9"
+              dur="1.4s"
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="ry"
+              values="12;14;12"
+              dur="1.4s"
+              repeatCount="indefinite"
+            />
             <animate
               attributeName="opacity"
-              values="0.5;0.95;0.5"
-              dur="2.4s"
+              values="0.75;1;0.75"
+              dur="1.4s"
               repeatCount="indefinite"
             />
           </ellipse>
-          {/* Ojo derecho */}
-          <ellipse cx="57" cy="31" rx="4" ry="2.5" fill="url(#overlay-eye-glow)">
+
+          {/* Glow secundario más amplio y tenue (halo de calor) */}
+          <ellipse
+            cx="50"
+            cy="52"
+            rx="16"
+            ry="20"
+            fill="url(#overlay-mouth-glow)"
+            opacity="0.35"
+            filter="url(#soft-glow)"
+          >
             <animate
               attributeName="opacity"
-              values="0.5;0.95;0.5"
-              dur="2.4s"
-              begin="0.2s"
+              values="0.25;0.5;0.25"
+              dur="2.2s"
               repeatCount="indefinite"
             />
           </ellipse>
         </g>
 
-        {/* ============== LLAMARADA SALIENDO DE LA BOCA ============== */}
-        <g className="sugaar-fire" filter="url(#overlay-fire-glow)">
-          {/* Forma principal del fuego: sale del centro de la boca (50, 50)
-              hacia abajo y hacia el observador */}
-          <path
-            d="M 44 47
-               Q 41 55, 39 64
-               Q 38 72, 42 76
-               Q 44 70, 47 67
-               Q 46 75, 49 80
-               Q 51 76, 51 71
-               Q 53 79, 56 78
-               Q 56 72, 54 67
-               Q 58 73, 61 70
-               Q 60 64, 57 60
-               Q 62 58, 60 52
-               Q 56 49, 50 48
-               Z"
-            fill="url(#overlay-fire)"
-            opacity="0.85"
-          >
-            <animate
-              attributeName="d"
-              values="
-                M 44 47 Q 41 55, 39 64 Q 38 72, 42 76 Q 44 70, 47 67 Q 46 75, 49 80 Q 51 76, 51 71 Q 53 79, 56 78 Q 56 72, 54 67 Q 58 73, 61 70 Q 60 64, 57 60 Q 62 58, 60 52 Q 56 49, 50 48 Z;
-                M 43 47 Q 39 56, 37 67 Q 36 76, 41 80 Q 44 72, 48 68 Q 47 78, 50 84 Q 52 79, 52 73 Q 55 82, 58 81 Q 58 73, 56 68 Q 60 75, 63 72 Q 62 65, 59 60 Q 64 58, 62 51 Q 57 48, 50 48 Z;
-                M 44 47 Q 41 55, 39 64 Q 38 72, 42 76 Q 44 70, 47 67 Q 46 75, 49 80 Q 51 76, 51 71 Q 53 79, 56 78 Q 56 72, 54 67 Q 58 73, 61 70 Q 60 64, 57 60 Q 62 58, 60 52 Q 56 49, 50 48 Z
-              "
-              dur="0.6s"
-              repeatCount="indefinite"
-            />
-          </path>
-
-          {/* Núcleo brillante de la llama */}
-          <ellipse cx="50" cy="56" rx="5" ry="3" fill="#FFFDE7" opacity="0.7">
+        {/* ============== GLOW OJOS ==============
+            Pequeños puntos de luz muy concentrados con blend screen para
+            que parezcan que los ojos brillan "desde dentro" en vez de
+            tener una pegatina amarilla encima. */}
+        <g className="sugaar-eyes" style={{ mixBlendMode: 'screen' }}>
+          <circle cx="38" cy="31" r="1.6" fill="url(#overlay-eye-spot)" filter="url(#soft-glow)">
             <animate
               attributeName="opacity"
-              values="0.5;0.85;0.5"
-              dur="0.5s"
-              repeatCount="indefinite"
-            />
-            <animate
-              attributeName="ry"
-              values="3;3.6;3"
-              dur="0.5s"
-              repeatCount="indefinite"
-            />
-          </ellipse>
-
-          {/* Chispas que vuelan desde la boca */}
-          <circle cx="44" cy="60" r="0.5" fill="#FFEB3B">
-            <animate
-              attributeName="cy"
-              values="48;75;48"
-              dur="1.4s"
-              repeatCount="indefinite"
-            />
-            <animate
-              attributeName="cx"
-              values="48;42;48"
-              dur="1.4s"
-              repeatCount="indefinite"
-            />
-            <animate
-              attributeName="opacity"
-              values="1;0;1"
-              dur="1.4s"
+              values="0.6;1;0.6"
+              dur="2.4s"
               repeatCount="indefinite"
             />
           </circle>
-          <circle cx="55" cy="65" r="0.45" fill="#FFB74D">
-            <animate
-              attributeName="cy"
-              values="48;78;48"
-              dur="1.7s"
-              begin="0.4s"
-              repeatCount="indefinite"
-            />
-            <animate
-              attributeName="cx"
-              values="50;56;50"
-              dur="1.7s"
-              begin="0.4s"
-              repeatCount="indefinite"
-            />
+          <circle cx="57" cy="31" r="1.6" fill="url(#overlay-eye-spot)" filter="url(#soft-glow)">
             <animate
               attributeName="opacity"
-              values="1;0;1"
-              dur="1.7s"
-              begin="0.4s"
-              repeatCount="indefinite"
-            />
-          </circle>
-          <circle cx="52" cy="70" r="0.6" fill="#FF8B3A">
-            <animate
-              attributeName="cy"
-              values="48;82;48"
-              dur="1.2s"
-              begin="0.6s"
-              repeatCount="indefinite"
-            />
-            <animate
-              attributeName="opacity"
-              values="1;0;1"
-              dur="1.2s"
-              begin="0.6s"
+              values="0.6;1;0.6"
+              dur="2.4s"
+              begin="0.3s"
               repeatCount="indefinite"
             />
           </circle>
