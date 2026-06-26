@@ -1,6 +1,6 @@
 'use server'
 
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export type NodeStudent = {
   id: string
@@ -29,7 +29,7 @@ export type NodeProgress = {
 export async function getMissionNodeProgressAction(
   missionId: string
 ): Promise<NodeProgress[]> {
-  const supabase = await createSupabaseServer()
+  const supabase = await createClient()
 
   // 1) Misión + aula (para sacar el classroom_id)
   const { data: missionRow } = await supabase
@@ -40,7 +40,7 @@ export async function getMissionNodeProgressAction(
 
   if (!missionRow) return []
 
-  // 2) Nodos (ordenados: el start primero, luego por position_y, position_x)
+  // 2) Nodos (start primero, luego por posición visual)
   const { data: nodes } = await supabase
     .from('mission_nodes')
     .select('id, title, is_start, position_x, position_y')
@@ -60,7 +60,7 @@ export async function getMissionNodeProgressAction(
 
   if (!students) return []
 
-  // 4) Progreso completo de la misión
+  // 4) Progreso completo
   const { data: progress } = await supabase
     .from('mission_progress')
     .select('node_id, student_id, status, submitted_at')
