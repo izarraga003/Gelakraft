@@ -20,9 +20,13 @@ import {
   duplicateMission,
   type StudentProgressRow,
 } from '@/lib/missions/extra-actions'
+import {
+  getMissionNodeProgressAction,
+  type NodeProgress,
+} from '@/lib/missions/node-progress'
 import { validateMission } from '@/lib/missions/validate'
 import AsyncButton from '@/components/ui/AsyncButton'
-import ClassroomProgressTable from '@/components/missions/ClassroomProgressTable'
+import NodeProgressList from '@/components/missions/NodeProgressList'
 import MissionValidationBadge from '@/components/missions/MissionValidationBadge'
 
 type Props = {
@@ -31,7 +35,9 @@ type Props = {
   initialMission: Mission
   initialNodes: MissionNode[]
   initialEdges: MissionEdge[]
-  initialProgress: StudentProgressRow[]
+  // Lo mantenemos como prop por compatibilidad con la página existente;
+  // ya no se usa para mostrar nada — el modal carga sus datos on-demand.
+  initialProgress?: StudentProgressRow[]
 }
 
 function localId() {
@@ -74,7 +80,6 @@ export default function MissionEditor({
   initialMission,
   initialNodes,
   initialEdges,
-  initialProgress,
 }: Props) {
   const router = useRouter()
 
@@ -90,7 +95,11 @@ export default function MissionEditor({
   const [editingNode, setEditingNode] = useState<MissionNode | null>(null)
   const [isNewNode, setIsNewNode] = useState(false)
   const [saveOk, setSaveOk] = useState<null | 'ok' | 'err'>(null)
+
+  // === Modal progreso por nodo (carga on-demand) ===
   const [showProgress, setShowProgress] = useState(false)
+  const [nodeProgress, setNodeProgress] = useState<NodeProgress[] | null>(null)
+  const [loadingProgress, setLoadingProgress] = useState(false)
 
   const mapRef = useRef<HTMLDivElement | null>(null)
   const dragRef = useRef<{
@@ -135,9 +144,19 @@ export default function MissionEditor({
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [isDirty])
 
-  // ============================================================
-  // GUARDAR TODO
-  // ============================================================
+  async function handleOpenProgress() {
+    setShowProgress(true)
+    setLoadingProgress(true)
+    try {
+      const r = await getMissionNodeProgressAction(savedMission.id)
+      setNodeProgress(r)
+    } catch (e) {
+      console.error('Errorea garapena kargatzean:', e)
+    } finally {
+      setLoadingProgress(false)
+    }
+  }
+
   async function handleSaveAll() {
     setSaveOk(null)
     try {
@@ -412,15 +431,6 @@ export default function MissionEditor({
 
   const currentMap = getMissionMap(draftMission.background_id)
 
-  // Estadísticas de progreso para el botón
-  const totalPending = initialProgress.reduce((a, r) => a + r.pending_review, 0)
-  const totalCompleted = initialProgress.filter((r) => r.fully_completed).length
-  const totalInProgress = initialProgress.filter(
-    (r) =>
-      !r.fully_completed &&
-      (r.completed > 0 || r.available > 0 || r.pending_review > 0)
-  ).length
-
   return (
     <div className="mission-editor">
       <header className="mission-editor-header">
@@ -441,31 +451,15 @@ export default function MissionEditor({
         <MissionValidationBadge issues={validationIssues} />
 
         <div className="mission-editor-header-actions">
-          {/* Botón PROGRESO destacado */}
+          {/* Botón Klasearen garapena — limpio */}
           <button
             type="button"
             className="mission-editor-progress-btn"
-            onClick={() => setShowProgress(true)}
-            title="Klasearen aurrerapena ikusi"
+            onClick={handleOpenProgress}
+            title="Klasearen garapena nodoz nodo ikusi"
           >
             <span className="mission-editor-progress-btn-icon">📊</span>
-            <span className="mission-editor-progress-btn-text">
-              <span className="mission-editor-progress-btn-label">Klasearen aurrerapena</span>
-              <span className="mission-editor-progress-btn-meta">
-                {totalCompleted > 0 && (
-                  <span className="mep-stat mep-stat-done">{totalCompleted} ✓</span>
-                )}
-                {totalInProgress > 0 && (
-                  <span className="mep-stat mep-stat-progress">{totalInProgress} bidean</span>
-                )}
-                {totalPending > 0 && (
-                  <span className="mep-stat mep-stat-pending">{totalPending} zain</span>
-                )}
-                {totalCompleted === 0 && totalInProgress === 0 && totalPending === 0 && (
-                  <span className="mep-stat-empty">Inor ez du hasi</span>
-                )}
-              </span>
-            </span>
+            <span className="mission-editor-progress-btn-label">Klasearen garapena</span>
           </button>
 
           {isDirty && (
@@ -760,7 +754,7 @@ export default function MissionEditor({
         />
       )}
 
-      {/* MODAL PROGRESO */}
+      {/* MODAL — Klasearen garapena por nodo */}
       {showProgress && (
         <div
           className="progress-modal-overlay"
@@ -771,10 +765,8 @@ export default function MissionEditor({
           <div className="progress-modal">
             <header className="progress-modal-header">
               <div>
-                <h2>Klasearen aurrerapena</h2>
-                <p className="progress-modal-subtitle">
-                  {savedMission.name}
-                </p>
+                <h2>Klasearen garapena</h2>
+                <p className="progress-modal-subtitle">{savedMission.name}</p>
               </div>
               <button
                 type="button"
@@ -785,7 +777,22 @@ export default function MissionEditor({
               </button>
             </header>
             <div className="progress-modal-body">
-              <ClassroomProgressTable rows={initialProgress} />
+              {nodeProgress === null && loadingProgress && (
+                <div className="progress-modal-loading">
+                  <span className="progress-modal-spinner" /> Datuak kargatzen…
+                </div>
+              )}
+              {nodeProgress !== null && (
+                <NodeProgressList
+                  nodes={nodeProgress}
+                  refreshing={loadingProgress}
+                />
+              )}
+              {nodeProgress === null && !loadingProgress && (
+                <p className="progress-modal-error">
+                  Errorea: ezin izan da garapena kargatu.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -846,11 +853,7 @@ function NodeEditorModal({
             {!isNewNode && draft.is_start ? '★ ' : ''}
             {!isNewNode && (draft.title || 'Helburua')}
           </h2>
-          <button
-            type="button"
-            className="node-editor-close"
-            onClick={onClose}
-          >
+          <button type="button" className="node-editor-close" onClick={onClose}>
             ✕
           </button>
         </header>
@@ -1140,7 +1143,7 @@ function NodeEditorModal({
               onApply(draft, isNewNode ? predecessorId || undefined : undefined)
             }
           >
-            {isNewNode ? 'Sortu nodoa' : 'Aplikatu'}
+            {isNewNode ? 'Helburua sortu' : 'Aplikatu'}
           </button>
         </footer>
       </div>
