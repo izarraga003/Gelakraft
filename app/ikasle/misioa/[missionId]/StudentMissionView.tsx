@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import MissionMapBackground from '@/components/missions/MissionMapBackground'
 import type { MissionMapId } from '@/lib/missions/maps'
@@ -100,6 +100,7 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
   } | null>(null)
   const [completionFlashNodeId, setCompletionFlashNodeId] = useState<string | null>(null)
 
+  // Para no mostrar el overlay si ya estaba completada al entrar
   const alreadyCompletedRef = useRef<boolean>(
     initialData.nodes.length > 0 &&
       initialData.progress.filter((p) => p.status === 'completed').length ===
@@ -150,14 +151,18 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
     const res = await fetch(`/ikasle/misioa/${data.mission.id}/api/refresh`, {
       cache: 'no-store',
     })
+    let fresh: DetailData | null = null
     if (res.ok) {
       const j = await res.json()
       if (j.success) {
-        setData(j.data)
+        fresh = j.data
+        setData(fresh!)
       }
     }
 
+    // Animaciones según resultado
     if (result.status === 'completed') {
+      // Flash verde sobre el nodo
       setCompletionFlashNodeId(node.id)
       window.setTimeout(() => setCompletionFlashNodeId(null), 1800)
 
@@ -173,18 +178,21 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
         pushFloat(node.id, `+${rewards.mana} 🔮`, 'gain')
       }
 
+      // Notificación de nodos desbloqueados
       const unlocked = result.unlocked ?? []
       if (unlocked.length > 0) {
         const titles = unlocked.map((u) => u.title).join(', ')
         pushToast('unlocked', `🔓 Helburu berriak: ${titles}`)
       }
 
+      // Victoria
       if (
         result.completion?.completed &&
         !result.completion.already &&
         !alreadyCompletedRef.current
       ) {
         alreadyCompletedRef.current = true
+        // Pequeña pausa para que se vea la animación del nodo primero
         window.setTimeout(() => {
           setVictory({
             name: result.completion?.mission_name ?? data.mission.name,
@@ -201,6 +209,8 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
     setOpenNode(null)
   }
 
+  const visNodes = data.nodes
+  const visEdges = data.edges
   const completedCount = data.progress.filter(
     (p) => p.status === 'completed'
   ).length
@@ -263,7 +273,7 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
               <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255, 253, 231, 0.25)" />
             </marker>
           </defs>
-          {data.edges.map((e, idx) => {
+          {visEdges.map((e, idx) => {
             const from = data.nodes.find((n) => n.id === e.from_node_id)
             const to = data.nodes.find((n) => n.id === e.to_node_id)
             if (!from || !to) return null
@@ -274,7 +284,7 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
                 ? 'rgba(125, 216, 118, 0.85)'
                 : isLocked
                 ? 'rgba(255, 253, 231, 0.22)'
-                : 'rgba(255, 253, 231, 0.6)'
+                : 'rgba(255, 253, 231, 0.55)'
             return (
               <line
                 key={idx}
@@ -283,7 +293,7 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
                 x2={to.position_x}
                 y2={to.position_y}
                 stroke={stroke}
-                strokeWidth="0.5"
+                strokeWidth="0.4"
                 strokeDasharray={fromStatus === 'completed' ? 'none' : '1 1'}
                 markerEnd={isLocked ? 'url(#s-arrow-locked)' : 'url(#s-arrow)'}
               />
@@ -291,76 +301,65 @@ export default function StudentMissionView({ studentId, initialData }: Props) {
           })}
         </svg>
 
-        {/* Botones de nodos directamente con position absolute */}
-        {data.nodes.map((node) => {
+        {visNodes.map((node) => {
           const status = statusOf(node.id)
+          const nodeFloats = floats.filter((f) => f.nodeId === node.id)
           const isFlashing = completionFlashNodeId === node.id
           return (
-            <button
-              key={node.id}
-              type="button"
-              className={`student-mission-node student-mission-node-${status} ${
-                isFlashing ? 'student-mission-node-flash' : ''
-              }`}
-              style={{
-                left: `${node.position_x}%`,
-                top: `${node.position_y}%`,
-              }}
-              onClick={() => setOpenNode(node)}
-              disabled={status === 'locked'}
-              title={node.title}
-            >
-              <span className="student-mission-node-icon">
-                {status === 'completed'
-                  ? '✓'
-                  : status === 'failed'
-                  ? '✗'
-                  : status === 'pending_review'
-                  ? '⏳'
-                  : status === 'available'
-                  ? node.is_start
-                    ? '★'
-                    : '📍'
-                  : '🔒'}
-              </span>
-              <span className="student-mission-node-label">{node.title}</span>
-            </button>
-          )
-        })}
-
-        {/* Floats: position absolute calculado por mismo % que el nodo */}
-        {data.nodes.map((node) => {
-          const nodeFloats = floats.filter((f) => f.nodeId === node.id)
-          if (nodeFloats.length === 0) return null
-          return (
             <div
-              key={`float-${node.id}`}
-              className="student-mission-floats-anchor"
-              style={{
-                left: `${node.position_x}%`,
-                top: `${node.position_y}%`,
-              }}
-              aria-hidden="true"
+              key={node.id}
+              className="student-mission-node-wrapper"
+              style={{ left: `${node.position_x}%`, top: `${node.position_y}%` }}
             >
-              {nodeFloats.map((f) => (
-                <span
-                  key={f.id}
-                  className={`student-mission-float student-mission-float-${f.variant}`}
-                >
-                  {f.text}
+              <button
+                type="button"
+                className={`student-mission-node student-mission-node-${status} ${
+                  isFlashing ? 'student-mission-node-flash' : ''
+                }`}
+                onClick={() => setOpenNode(node)}
+                disabled={status === 'locked'}
+                title={node.title}
+              >
+                <span className="student-mission-node-icon">
+                  {status === 'completed'
+                    ? '✓'
+                    : status === 'failed'
+                    ? '✗'
+                    : status === 'pending_review'
+                    ? '⏳'
+                    : status === 'available'
+                    ? node.is_start
+                      ? '★'
+                      : '📍'
+                    : '🔒'}
                 </span>
-              ))}
+                <span className="student-mission-node-label">{node.title}</span>
+              </button>
+              {/* Floating rewards */}
+              {nodeFloats.length > 0 && (
+                <div className="student-mission-node-floats" aria-hidden="true">
+                  {nodeFloats.map((f) => (
+                    <span
+                      key={f.id}
+                      className={`student-mission-float student-mission-float-${f.variant}`}
+                    >
+                      {f.text}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )
         })}
 
-        {data.nodes.length === 0 && (
+        {visNodes.length === 0 && (
           <div className="student-mission-empty">
             Misio honek oraindik ez du helburuik. Itzuli geroago.
           </div>
         )}
       </div>
 
+      {/* Toasts */}
       {toasts.length > 0 && (
         <div className="mission-toasts" aria-live="polite">
           {toasts.map((t) => (
