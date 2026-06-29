@@ -14,8 +14,6 @@ type Props = {
   nodes: NodeProgress[]
 }
 
-type GroupVariant = 'done' | 'pending' | 'failed' | 'available' | 'locked'
-
 const AVATAR_COLORS = [
   '#4F8B3A',
   '#8B6F1A',
@@ -183,12 +181,52 @@ function NodeCard({ node, index }: { node: NodeProgress; index: number }) {
   const total = node.total
   const pct = total > 0 ? Math.round((100 * completedCount) / total) : 0
 
-  const hasAnyStudents =
-    node.completed.length > 0 ||
-    node.pending.length > 0 ||
-    node.failed.length > 0 ||
-    node.available.length > 0 ||
-    node.locked.length > 0
+  const groups: Array<{
+    key: string
+    variant: 'done' | 'pending' | 'failed' | 'available' | 'locked'
+    label: string
+    emoji: string
+    students: NodeStudent[]
+    showDate?: boolean
+  }> = [
+    {
+      key: 'completed',
+      variant: 'done',
+      label: 'Osatuta',
+      emoji: '✓',
+      students: node.completed,
+      showDate: true,
+    },
+    {
+      key: 'pending',
+      variant: 'pending',
+      label: 'Berrikusi zain',
+      emoji: '⏳',
+      students: node.pending,
+      showDate: true,
+    },
+    {
+      key: 'failed',
+      variant: 'failed',
+      label: 'Hutsegitea',
+      emoji: '✗',
+      students: node.failed,
+    },
+    {
+      key: 'available',
+      variant: 'available',
+      label: 'Eskuratuta, egin gabe',
+      emoji: '📍',
+      students: node.available,
+    },
+    {
+      key: 'locked',
+      variant: 'locked',
+      label: 'Oraindik ez dute eskuratu',
+      emoji: '🔒',
+      students: node.locked,
+    },
+  ].filter((g) => g.students.length > 0)
 
   return (
     <article className="garapena-node-card">
@@ -215,52 +253,20 @@ function NodeCard({ node, index }: { node: NodeProgress; index: number }) {
         </div>
       </header>
 
-      {!hasAnyStudents ? (
+      {groups.length === 0 ? (
         <p className="garapena-node-empty">Ikaslerik gabe aulan.</p>
       ) : (
         <div className="garapena-node-groups">
-          {node.completed.length > 0 && (
+          {groups.map((g) => (
             <GroupBlock
-              label="Osatuta"
-              emoji="✓"
-              variant="done"
-              students={node.completed}
-              showDate
+              key={g.key}
+              label={g.label}
+              emoji={g.emoji}
+              variant={g.variant}
+              students={g.students}
+              showDate={g.showDate}
             />
-          )}
-          {node.pending.length > 0 && (
-            <GroupBlock
-              label="Berrikusi zain"
-              emoji="⏳"
-              variant="pending"
-              students={node.pending}
-              showDate
-            />
-          )}
-          {node.failed.length > 0 && (
-            <GroupBlock
-              label="Hutsegitea"
-              emoji="✗"
-              variant="failed"
-              students={node.failed}
-            />
-          )}
-          {node.available.length > 0 && (
-            <GroupBlock
-              label="Eskuratuta, egin gabe"
-              emoji="📍"
-              variant="available"
-              students={node.available}
-            />
-          )}
-          {node.locked.length > 0 && (
-            <GroupBlock
-              label="Oraindik ez dute eskuratu"
-              emoji="🔒"
-              variant="locked"
-              students={node.locked}
-            />
-          )}
+          ))}
         </div>
       )}
     </article>
@@ -276,7 +282,7 @@ function GroupBlock({
 }: {
   label: string
   emoji: string
-  variant: GroupVariant
+  variant: 'done' | 'pending' | 'failed' | 'available' | 'locked'
   students: NodeStudent[]
   showDate?: boolean
 }) {
