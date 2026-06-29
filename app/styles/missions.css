@@ -1070,3 +1070,791 @@
   background: rgba(184, 138, 60, 0.15);
   color: var(--iluntze);
 }
+/* ============================================
+   APPEND v7 — página Garapena + sección landing
+   PEGAR al final de app/styles/missions.css
+   ============================================ */
+
+/* ============================================================
+   PÁGINA GARAPENA
+   ============================================================ */
+.garapena-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: calc(100vh - 48px);
+}
+
+.garapena-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--ilun);
+  font-size: 14px;
+  font-weight: 600;
+  align-self: flex-start;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+.garapena-back-btn:hover {
+  background: rgba(184, 138, 60, 0.1);
+  transform: translateX(-2px);
+}
+
+/* === Cabecera de la misión === */
+.garapena-mission-card {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1.5px solid rgba(184, 138, 60, 0.22);
+}
+.garapena-mission-card-map {
+  position: relative;
+  background: #1A1A2E;
+  overflow: hidden;
+  min-height: 160px;
+}
+.garapena-mission-card-map svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.garapena-mission-card-map-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0) 60%,
+    rgba(255, 253, 231, 0.4) 100%
+  );
+  pointer-events: none;
+}
+.garapena-mission-card-text {
+  padding: 26px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.garapena-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--urrea);
+}
+.garapena-mission-card-text h1 {
+  margin: 6px 0 10px;
+  font-family: var(--font-fraunces-stack);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ilun);
+  line-height: 1.15;
+}
+.garapena-mission-card-text p {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--iluntze);
+  line-height: 1.55;
+  max-width: 560px;
+}
+
+/* === Stats globales === */
+.garapena-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.garapena-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.22);
+  border-radius: 14px;
+  padding: 18px 20px;
+  transition: all 0.2s;
+}
+.garapena-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(184, 138, 60, 0.15);
+}
+.garapena-stat-icon {
+  font-size: 30px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+.garapena-stat-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.garapena-stat-value {
+  font-family: var(--font-fraunces-stack);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ilun);
+  font-variant-numeric: tabular-nums;
+}
+.garapena-stat-label {
+  font-size: 12px;
+  color: var(--iluntze);
+  margin-top: 4px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.garapena-stat-done {
+  border-color: rgba(125, 216, 118, 0.5);
+  background: linear-gradient(135deg, rgba(125, 216, 118, 0.08), white);
+}
+.garapena-stat-done .garapena-stat-value { color: #2D7A1F; }
+.garapena-stat-progress {
+  border-color: rgba(75, 144, 232, 0.4);
+  background: linear-gradient(135deg, rgba(75, 144, 232, 0.06), white);
+}
+.garapena-stat-progress .garapena-stat-value { color: #2D5A95; }
+.garapena-stat-pending {
+  border-color: rgba(232, 200, 75, 0.5);
+  background: linear-gradient(135deg, rgba(232, 200, 75, 0.08), white);
+}
+.garapena-stat-pending .garapena-stat-value { color: #8B6F1A; }
+.garapena-stat-highlight {
+  animation: garapena-stat-pulse 2.4s ease-in-out infinite;
+}
+@keyframes garapena-stat-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 200, 75, 0); }
+  50%      { box-shadow: 0 0 0 8px rgba(232, 200, 75, 0.22); }
+}
+
+/* === Cards de nodos === */
+.garapena-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.garapena-node-card {
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.22);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(184, 138, 60, 0.08);
+  transition: all 0.2s;
+}
+.garapena-node-card:hover {
+  box-shadow: 0 8px 24px rgba(184, 138, 60, 0.15);
+  border-color: rgba(184, 138, 60, 0.4);
+}
+
+.garapena-node-header {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 24px;
+  background: linear-gradient(
+    135deg,
+    rgba(184, 138, 60, 0.08),
+    rgba(232, 200, 75, 0.04)
+  );
+  border-bottom: 1px solid rgba(184, 138, 60, 0.18);
+}
+.garapena-node-index {
+  background: rgba(232, 200, 75, 0.25);
+  color: #8B6F1A;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 800;
+  font-size: 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.garapena-node-index-start {
+  background: linear-gradient(135deg, #FFD53D, #E8B53B);
+  color: #5A3D08;
+  font-size: 19px;
+  box-shadow: 0 3px 8px rgba(232, 181, 59, 0.4);
+}
+.garapena-node-title {
+  margin: 0;
+  font-family: var(--font-fraunces-stack);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ilun);
+  letter-spacing: -0.01em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.garapena-node-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.garapena-node-progress-text {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--iluntze);
+  font-variant-numeric: tabular-nums;
+}
+.garapena-node-bar {
+  width: 140px;
+  height: 8px;
+  background: rgba(184, 138, 60, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.garapena-node-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7CD876, #4F8B3A);
+  border-radius: 4px;
+  transition: width 0.4s ease-out;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.garapena-node-pct {
+  font-weight: 800;
+  font-size: 15px;
+  color: #2D7A1F;
+  min-width: 42px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.garapena-node-groups {
+  padding: 18px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.garapena-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.garapena-group-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.garapena-group-emoji {
+  font-size: 16px;
+  line-height: 1;
+}
+.garapena-group-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.garapena-group-count {
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 50px;
+  letter-spacing: 0.02em;
+}
+
+.garapena-group-done .garapena-group-label { color: #2D7A1F; }
+.garapena-group-done .garapena-group-count {
+  background: rgba(125, 216, 118, 0.25);
+  color: #2D7A1F;
+}
+.garapena-group-pending .garapena-group-label { color: #8B6F1A; }
+.garapena-group-pending .garapena-group-count {
+  background: rgba(232, 200, 75, 0.28);
+  color: #8B6F1A;
+}
+.garapena-group-failed .garapena-group-label { color: var(--sugaar); }
+.garapena-group-failed .garapena-group-count {
+  background: rgba(194, 70, 23, 0.18);
+  color: var(--sugaar);
+}
+.garapena-group-available .garapena-group-label { color: #2D5A95; }
+.garapena-group-available .garapena-group-count {
+  background: rgba(75, 144, 232, 0.18);
+  color: #2D5A95;
+}
+.garapena-group-locked .garapena-group-label { color: #666; }
+.garapena-group-locked .garapena-group-count {
+  background: rgba(120, 120, 120, 0.18);
+  color: #555;
+}
+
+/* === Lista de alumnos === */
+.garapena-students {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+}
+.garapena-student {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.025);
+  border-radius: 10px;
+  transition: all 0.15s;
+  min-width: 0;
+}
+.garapena-student:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateX(2px);
+}
+.garapena-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-family: var(--font-fraunces-stack);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--argi);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.garapena-student-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.garapena-student-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ilun);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.garapena-student-date {
+  font-size: 11px;
+  color: var(--iluntze);
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.garapena-group-done .garapena-student {
+  background: rgba(125, 216, 118, 0.08);
+}
+.garapena-group-done .garapena-student:hover {
+  background: rgba(125, 216, 118, 0.15);
+}
+.garapena-group-pending .garapena-student {
+  background: rgba(232, 200, 75, 0.1);
+}
+.garapena-group-pending .garapena-student:hover {
+  background: rgba(232, 200, 75, 0.18);
+}
+.garapena-group-failed .garapena-student {
+  background: rgba(194, 70, 23, 0.06);
+}
+.garapena-group-locked .garapena-student {
+  opacity: 0.65;
+  background: rgba(120, 120, 120, 0.06);
+}
+.garapena-group-locked .garapena-avatar {
+  filter: grayscale(0.6);
+}
+
+.garapena-node-empty {
+  padding: 26px;
+  text-align: center;
+  color: var(--iluntze);
+  font-style: italic;
+  font-size: 14px;
+}
+
+.garapena-empty {
+  padding: 60px 32px;
+  text-align: center;
+  background: white;
+  border-radius: 16px;
+  border: 1.5px dashed rgba(184, 138, 60, 0.4);
+}
+.garapena-empty p {
+  margin: 0 0 20px;
+  font-size: 16px;
+  color: var(--iluntze);
+}
+
+/* === Responsive Garapena === */
+@media (max-width: 900px) {
+  .garapena-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .garapena-mission-card {
+    grid-template-columns: 1fr;
+  }
+  .garapena-mission-card-map {
+    height: 120px;
+    min-height: 120px;
+  }
+  .garapena-node-header {
+    grid-template-columns: 38px 1fr;
+    gap: 12px;
+    padding: 14px 18px;
+  }
+  .garapena-node-progress {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+  }
+  .garapena-node-bar {
+    width: 100px;
+  }
+  .garapena-node-title {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 600px) {
+  .garapena-page { padding: 16px; }
+  .garapena-mission-card-text { padding: 20px 22px; }
+  .garapena-mission-card-text h1 { font-size: 24px; }
+  .garapena-stat-card { padding: 14px 16px; }
+  .garapena-stat-icon { font-size: 24px; }
+  .garapena-stat-value { font-size: 24px; }
+  .garapena-students {
+    grid-template-columns: 1fr;
+  }
+  .garapena-node-groups {
+    padding: 14px 18px 18px;
+  }
+}
+
+/* ============================================================
+   LANDING MISSIONS SECTION
+   ============================================================ */
+.landing-missions {
+  position: relative;
+  padding: 100px 24px;
+  background: linear-gradient(
+    180deg,
+    var(--argi) 0%,
+    #FAF3E5 100%
+  );
+  overflow: hidden;
+}
+.landing-missions-bg-decoration {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.landing-missions-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+}
+.landing-missions-circle-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(232, 200, 75, 0.22), transparent);
+  top: -100px;
+  right: -100px;
+}
+.landing-missions-circle-2 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(194, 70, 23, 0.15), transparent);
+  bottom: -80px;
+  left: -80px;
+}
+
+.landing-missions-container {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  z-index: 1;
+}
+
+/* === Hero === */
+.landing-missions-hero {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 56px;
+}
+.landing-missions-tagline {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--urrea);
+  padding: 6px 14px;
+  background: rgba(232, 200, 75, 0.18);
+  border-radius: 50px;
+  margin-bottom: 18px;
+}
+.landing-missions-title {
+  margin: 0 0 18px;
+  font-family: var(--font-fraunces-stack);
+  font-size: clamp(34px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--ilun);
+}
+.landing-missions-title span {
+  background: linear-gradient(135deg, #C24617, #8B3A12);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.landing-missions-subtitle {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--iluntze);
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* === Mini-mapas === */
+.landing-missions-maps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.landing-missions-map {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #1A1A2E;
+  aspect-ratio: 4 / 3;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  border: 1.5px solid rgba(184, 138, 60, 0.2);
+  transition: all 0.3s;
+}
+.landing-missions-map:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+.landing-missions-map-bg {
+  position: absolute;
+  inset: 0;
+}
+.landing-missions-map-bg svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.landing-missions-map-text {
+  position: absolute;
+  inset: 0;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(
+    180deg,
+    transparent 50%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  color: var(--argi);
+}
+.landing-missions-map-text h3 {
+  margin: 0 0 4px;
+  font-family: var(--font-fraunces-stack);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+.landing-missions-map-text p {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.9;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.landing-missions-maps-foot {
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--iluntze);
+  margin: 0 0 64px;
+  font-style: italic;
+}
+
+/* === Tres pilares === */
+.landing-missions-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 64px;
+}
+.landing-missions-pillar {
+  background: white;
+  border: 1.5px solid rgba(184, 138, 60, 0.22);
+  border-radius: 18px;
+  padding: 32px 26px;
+  transition: all 0.25s;
+}
+.landing-missions-pillar:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(184, 138, 60, 0.18);
+  border-color: rgba(184, 138, 60, 0.45);
+}
+.landing-missions-pillar-icon {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 16px;
+  display: inline-block;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.1));
+}
+.landing-missions-pillar h3 {
+  margin: 0 0 12px;
+  font-family: var(--font-fraunces-stack);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ilun);
+  letter-spacing: -0.01em;
+}
+.landing-missions-pillar p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--iluntze);
+}
+
+/* === Features grid === */
+.landing-missions-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 64px;
+}
+.landing-missions-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 22px;
+  background: white;
+  border-radius: 12px;
+  border-left: 4px solid var(--urrea);
+}
+.landing-missions-feature strong {
+  font-family: var(--font-fraunces-stack);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ilun);
+}
+.landing-missions-feature span {
+  font-size: 13.5px;
+  color: var(--iluntze);
+  line-height: 1.5;
+}
+
+/* === CTA === */
+.landing-missions-cta {
+  text-align: center;
+  padding: 48px 32px;
+  background: linear-gradient(135deg, #2A1F4A, #4A3370 50%, #6B4A8B);
+  border-radius: 24px;
+  color: var(--argi);
+  position: relative;
+  overflow: hidden;
+}
+.landing-missions-cta::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(232, 200, 75, 0.25) 0%,
+    transparent 60%
+  );
+  transform: rotate(20deg);
+  pointer-events: none;
+}
+.landing-missions-cta h3 {
+  position: relative;
+  margin: 0 0 10px;
+  font-family: var(--font-fraunces-stack);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.landing-missions-cta p {
+  position: relative;
+  margin: 0 0 26px;
+  font-size: 16px;
+  opacity: 0.92;
+}
+.landing-missions-cta-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: var(--urrea);
+  color: var(--ilun);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 15px;
+  border-radius: 50px;
+  transition: all 0.2s;
+  box-shadow: 0 6px 20px rgba(232, 200, 75, 0.45);
+}
+.landing-missions-cta-btn:hover {
+  transform: translateY(-2px);
+  background: #FFD53D;
+  box-shadow: 0 10px 28px rgba(232, 200, 75, 0.6);
+}
+
+/* === Responsive Landing === */
+@media (max-width: 900px) {
+  .landing-missions {
+    padding: 72px 20px;
+  }
+  .landing-missions-maps {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .landing-missions-pillars {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .landing-missions-features {
+    grid-template-columns: 1fr;
+  }
+  .landing-missions-hero {
+    margin-bottom: 40px;
+  }
+  .landing-missions-cta {
+    padding: 36px 22px;
+  }
+  .landing-missions-cta h3 {
+    font-size: 24px;
+  }
+}

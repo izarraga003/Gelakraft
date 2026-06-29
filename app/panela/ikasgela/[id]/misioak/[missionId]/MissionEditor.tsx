@@ -20,13 +20,8 @@ import {
   duplicateMission,
   type StudentProgressRow,
 } from '@/lib/missions/extra-actions'
-import {
-  getMissionNodeProgressAction,
-  type NodeProgress,
-} from '@/lib/missions/node-progress'
 import { validateMission } from '@/lib/missions/validate'
 import AsyncButton from '@/components/ui/AsyncButton'
-import NodeProgressList from '@/components/missions/NodeProgressList'
 import MissionValidationBadge from '@/components/missions/MissionValidationBadge'
 
 type Props = {
@@ -35,8 +30,6 @@ type Props = {
   initialMission: Mission
   initialNodes: MissionNode[]
   initialEdges: MissionEdge[]
-  // Lo mantenemos como prop por compatibilidad con la página existente;
-  // ya no se usa para mostrar nada — el modal carga sus datos on-demand.
   initialProgress?: StudentProgressRow[]
 }
 
@@ -96,11 +89,6 @@ export default function MissionEditor({
   const [isNewNode, setIsNewNode] = useState(false)
   const [saveOk, setSaveOk] = useState<null | 'ok' | 'err'>(null)
 
-  // === Modal progreso por nodo (carga on-demand) ===
-  const [showProgress, setShowProgress] = useState(false)
-  const [nodeProgress, setNodeProgress] = useState<NodeProgress[] | null>(null)
-  const [loadingProgress, setLoadingProgress] = useState(false)
-
   const mapRef = useRef<HTMLDivElement | null>(null)
   const dragRef = useRef<{
     nodeId: string
@@ -144,17 +132,18 @@ export default function MissionEditor({
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [isDirty])
 
-  async function handleOpenProgress() {
-    setShowProgress(true)
-    setLoadingProgress(true)
-    try {
-      const r = await getMissionNodeProgressAction(savedMission.id)
-      setNodeProgress(r)
-    } catch (e) {
-      console.error('Errorea garapena kargatzean:', e)
-    } finally {
-      setLoadingProgress(false)
+  function handleOpenGarapena() {
+    if (isDirty) {
+      if (
+        !window.confirm(
+          'Gorde gabeko aldaketak galduko dira. Garapena irekitzeko aurrera egin?'
+        )
+      )
+        return
     }
+    router.push(
+      `/panela/ikasgela/${classroomId}/misioak/${savedMission.id}/garapena`
+    )
   }
 
   async function handleSaveAll() {
@@ -451,12 +440,11 @@ export default function MissionEditor({
         <MissionValidationBadge issues={validationIssues} />
 
         <div className="mission-editor-header-actions">
-          {/* Botón Klasearen garapena — limpio */}
           <button
             type="button"
             className="mission-editor-progress-btn"
-            onClick={handleOpenProgress}
-            title="Klasearen garapena nodoz nodo ikusi"
+            onClick={handleOpenGarapena}
+            title="Klasearen garapena ikusi"
           >
             <span className="mission-editor-progress-btn-icon">📊</span>
             <span className="mission-editor-progress-btn-label">Klasearen garapena</span>
@@ -752,50 +740,6 @@ export default function MissionEditor({
           }
           onRemoveEdge={(edgeId) => handleRemoveEdgeLocal(edgeId)}
         />
-      )}
-
-      {/* MODAL — Klasearen garapena por nodo */}
-      {showProgress && (
-        <div
-          className="progress-modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowProgress(false)
-          }}
-        >
-          <div className="progress-modal">
-            <header className="progress-modal-header">
-              <div>
-                <h2>Klasearen garapena</h2>
-                <p className="progress-modal-subtitle">{savedMission.name}</p>
-              </div>
-              <button
-                type="button"
-                className="progress-modal-close"
-                onClick={() => setShowProgress(false)}
-              >
-                ✕
-              </button>
-            </header>
-            <div className="progress-modal-body">
-              {nodeProgress === null && loadingProgress && (
-                <div className="progress-modal-loading">
-                  <span className="progress-modal-spinner" /> Datuak kargatzen…
-                </div>
-              )}
-              {nodeProgress !== null && (
-                <NodeProgressList
-                  nodes={nodeProgress}
-                  refreshing={loadingProgress}
-                />
-              )}
-              {nodeProgress === null && !loadingProgress && (
-                <p className="progress-modal-error">
-                  Errorea: ezin izan da garapena kargatu.
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
       )}
     </div>
   )

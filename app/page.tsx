@@ -6,11 +6,13 @@ import AudienceSection from '@/components/AudienceSection'
 import PrivacySection from '@/components/PrivacySection'
 import CTASection from '@/components/CTASection'
 import Footer from '@/components/Footer'
+import MissionsLandingSection from '@/components/missions/MissionsLandingSection'
 
 export default function HomePage() {
   return (
     <>
       <Hero />
+	  <MissionsLandingSection />
       <HowItWorksSection />
       <ToolsSection />
       <MythologySection />
