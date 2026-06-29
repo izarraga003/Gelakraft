@@ -12,9 +12,9 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-	  <MissionsLandingSection />
       <HowItWorksSection />
       <ToolsSection />
+	  <MissionsLandingSection />
       <MythologySection />
       <AudienceSection />
       <PrivacySection />
