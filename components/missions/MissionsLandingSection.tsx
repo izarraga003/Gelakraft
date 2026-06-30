@@ -3,8 +3,10 @@ import Link from 'next/link'
 
 /**
  * Sección de landing que explica las misiones a los visitantes.
- * Insertar en app/page.tsx en el orden narrativo que prefieras
- * (después de Hero / antes del CTA final, p.ej.).
+ * Insertar en app/page.tsx donde quieras.
+ *
+ * NOTA: el botón CTA enlaza a "/" por defecto. Si tienes una ruta
+ * específica de login (p.ej. /login o /saio-hasi), cámbiala abajo.
  */
 export default function MissionsLandingSection() {
   return (
@@ -15,7 +17,6 @@ export default function MissionsLandingSection() {
       </div>
 
       <div className="landing-missions-container">
-        {/* === Hero === */}
         <div className="landing-missions-hero">
           <span className="landing-missions-tagline">Misioak</span>
           <h2 className="landing-missions-title">
@@ -31,7 +32,6 @@ export default function MissionsLandingSection() {
           </p>
         </div>
 
-        {/* === Mini-mapas showcase === */}
         <div className="landing-missions-maps">
           <article className="landing-missions-map">
             <div className="landing-missions-map-bg">
@@ -69,7 +69,6 @@ export default function MissionsLandingSection() {
           propioekin. Aukeratu misioarekin bat datorrena.
         </p>
 
-        {/* === Tres pilares === */}
         <div className="landing-missions-pillars">
           <article className="landing-missions-pillar">
             <div className="landing-missions-pillar-icon">🗺️</div>
@@ -105,7 +104,6 @@ export default function MissionsLandingSection() {
           </article>
         </div>
 
-        {/* === Stats showcase === */}
         <div className="landing-missions-features">
           <div className="landing-missions-feature">
             <strong>Auto edo eskuzko onarpena</strong>
@@ -137,11 +135,11 @@ export default function MissionsLandingSection() {
           </div>
         </div>
 
-        {/* === CTA === */}
         <div className="landing-missions-cta">
           <h3>Prest zaude lehen misioa diseinatzeko?</h3>
           <p>Hasi eta aulako lehen ibilbidea sortu minutu gutxitan.</p>
-          <Link href="/sartu" className="landing-missions-cta-btn">
+          {/* Cambia "/" por tu ruta de login real si la tienes (p.ej. "/login") */}
+          <Link href="/" className="landing-missions-cta-btn">
             Hasi orain →
           </Link>
         </div>
