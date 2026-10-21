@@ -10,7 +10,8 @@ Plataforma de gamificación de aula en euskera, basada en mitología vasca.
 - **React 19**
 - **TypeScript**
 - **Fraunces + Inter** (vía `next/font`)
-- **Supabase** — Postgres + Auth (magic links)
+- **Supabase** — Postgres + Auth (email + contraseña para profesores)
+- **iron-session** — sesiones de alumno (sin Supabase Auth)
 - **Vercel** — hosting
 
 ---
@@ -36,13 +37,41 @@ npm install
 
 ### 3. Ejecutar el esquema de base de datos
 
-1. En Supabase: **SQL Editor** (icono de la izquierda).
-2. **New query**.
-3. Copiar y pegar todo el contenido de `supabase/schema.sql` del proyecto.
-4. **Run**. Crea las tablas `profiles` y `classrooms` con RLS activado.
-5. **New query** otra vez.
-6. Copiar y pegar `supabase/students.sql`.
-7. **Run**. Crea la tabla `students` y la función RPC para login de alumno.
+En Supabase: **SQL Editor** → **New query** → pegar el script → **Run**. Repetir con cada uno de los 18 scripts de `supabase/`, **en este orden**:
+
+| # | Script | Qué hace | Depende de |
+|---|--------|----------|------------|
+| 1 | `schema.sql` | Tablas `profiles`, `classrooms`; trigger que crea el perfil al registrarse | — |
+| 2 | `students.sql` | Tabla `students`; RPC `find_student_for_login` | 1 |
+| 3 | `students-stats.sql` | Columnas `hero_class`, `xp`, `hearts`, `mana`…; RPC `apply_battle_result` | 2 |
+| 4 | `events.sql` | Tabla `events` (ustekabeko gertaerak) | 1 |
+| 5 | `student-dashboard.sql` | Columna `avatar`, tabla `activities`; RPC `get_student_dashboard`, `record_activity` | 3 |
+| 6 | `avatar-and-bulk.sql` | `avatar_config` (JSONB), `activities.affected_student_ids`; RPC `adjust_students` | 5 |
+| 7 | `behaviors-teams-powers.sql` | Tablas `behaviors`, `teams`, `team_members`, `power_usages`; RPC `generate_teams`, `use_power` | 6 |
+| 8 | `power-requests.sql` | Tabla `power_requests`; RPC `request_power`, `approve_power_request`… | 7 |
+| 9 | `konfigurazioa.sql` | Tabla `power_overrides`, `weekly_mana`/`weekly_hearts`; RPC `apply_weekly_grants`, `update_classroom_settings` | 8 |
+| 10 | `grant-days.sql` | Columna `classrooms.grant_days`; redefine `apply_weekly_grants` y `update_classroom_settings` | 9 |
+| 11 | `patuak.sql` | Tabla `death_consequences`, `students.pending_death`; RPC `execute_death_sentence` | 6 |
+| 12 | `fix-power-invoke.sql` | RPC `get_power_effective`, `list_overrides_for_classroom` | 9 |
+| 13 | `full-editable-powers.sql` | Amplía `power_overrides` (nombre, icono…); redefine las dos RPC de 12 | 12 |
+| 14 | `fix-duplicate-usernames.sql` | Renombra usernames duplicados y añade `UNIQUE` global a `students.username` | 2 |
+| 15 | `missions.sql` | Tablas `missions`, `mission_nodes`, `mission_edges`, `mission_progress` | 2 |
+| 16 | `missions-patch-v2.sql` | Redefine `ensure_start_node` | 15 |
+| 17 | `missions-patch-v3.sql` | Tabla `mission_completions`; redefine `submit_mission_node`, `review_mission_node` | 16 |
+| 18 | `missions-patch-v5.sql` | `mission_progress.mission_id` NOT NULL + trigger; redefine `check_mission_completion`, `get_mission_classroom_progress` | 17 |
+
+No hay `missions-patch-v4.sql`: los commits "misioak v4" solo tocaron código de la app.
+
+El orden es el de creación de cada script en el historial de git, comprobado contra las dependencias (tablas, columnas y funciones que usa cada uno). Los puntos donde un orden distinto rompe algo **sin dar error**:
+
+- **`get_student_dashboard`** se redefine en 5 scripts (5, 6, 7, 8, 9). Gana el último ejecutado. La versión buena es la de `konfigurazioa.sql` (incluye `power_requests` y llama a `apply_weekly_grants`). Si se ejecuta `power-requests.sql` después de `konfigurazioa.sql`, los alumnos dejan de recibir el maná y los corazones semanales.
+- **`apply_weekly_grants`**: la versión final es la de `grant-days.sql` (por días de la semana). Si `konfigurazioa.sql` va después, vuelve al reparto semanal antiguo.
+- **`list_overrides_for_classroom` / `get_power_effective`**: la versión final es la de `full-editable-powers.sql`. Si `fix-power-invoke.sql` va después, el alumno deja de ver nombre, descripción e icono editados de los poderes.
+- **`update_classroom_settings`**: `konfigurazioa.sql` la crea con 4 parámetros y `grant-days.sql` crea otra con 5 (no la reemplaza, queda sobrecargada). La app llama siempre a la de 5 (`lib/classroom/settings.ts`), así que funciona, pero la de 4 sobra.
+
+Todos los scripts usan `if not exists` / `create or replace`, así que volver a ejecutar uno ya aplicado no falla; lo que importa es el orden relativo de los que redefinen funciones.
+
+> **GRANT pendientes.** Ningún script incluye `grant ... to authenticated / service_role / anon`. Las tablas ya creadas conservan su acceso, pero desde el 30/10/2026 Supabase no da acceso por la Data API a las tablas nuevas. Si se monta una base de datos nueva con estos scripts después de esa fecha, habrá que añadir los GRANT de las 17 tablas: `profiles`, `classrooms`, `students`, `events`, `activities`, `behaviors`, `teams`, `team_members`, `power_usages`, `power_requests`, `power_overrides`, `death_consequences`, `missions`, `mission_nodes`, `mission_edges`, `mission_progress`, `mission_completions`. Ver `CLAUDE.md`.
 
 ### 4. Configurar Authentication en Supabase
 
@@ -165,9 +194,10 @@ git push -u origin main
 
 1. [vercel.com](https://vercel.com) → **Add New** → **Project**.
 2. Seleccionar el repo `gelakraft`.
-3. **Environment Variables**: añadir los dos valores:
+3. **Environment Variables**: añadir los tres valores:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `STUDENT_SESSION_SECRET` (sin él, los alumnos no pueden iniciar sesión)
 4. **Deploy**.
 
 ### 3. Conectar el dominio
@@ -187,25 +217,26 @@ gelakraft/
 │   ├── page.tsx               # Landing pública
 │   ├── saioa-hasi/page.tsx    # Login
 │   ├── izen-ematea/page.tsx   # Registro
-│   ├── auth/
-│   │   ├── callback/route.ts  # Handler del magic link
-│   │   └── saioa-itxi/route.ts# Logout
-│   └── panela/
-│       ├── layout.tsx         # Layout protegido del panel
-│       └── page.tsx           # Dashboard del profesor
+│   ├── auth/                  # Callback, recuperación y cambio de contraseña, logout
+│   ├── panela/                # Panel del profesor
+│   │   └── ikasgela/[id]/     # Ikasgela: herramientas, misioak, eskaerak, konfiguratu/…
+│   ├── ikasle/                # Login y panel del alumno, vista de misión
+│   └── proiektatu/            # Vista para proyectar el aula en pantalla
 ├── components/
 │   ├── icons.tsx              # Todos los iconos SVG
-│   ├── auth/AuthForm.tsx      # Formulario de magic link
+│   ├── auth/                  # Formularios de login y registro
+│   ├── battle/, missions/, student/, tools/   # UI de cada funcionalidad
 │   ├── Hero.tsx, ToolsSection.tsx, ...   # Secciones de la landing
 │   └── ...
 ├── lib/
+│   ├── students/, powers/, missions/, patuak/, …   # Server actions por dominio
 │   └── supabase/
 │       ├── client.ts          # Cliente para el navegador
 │       ├── server.ts          # Cliente para servidor (RSC, route handlers)
 │       └── middleware.ts      # Helper para refrescar sesión
 ├── middleware.ts              # Protege /panela, refresca sesión
 ├── supabase/
-│   └── schema.sql             # Esquema inicial de BD (ejecutar en Supabase)
+│   └── *.sql                  # 18 scripts de BD (orden en "Setup inicial", paso 3)
 └── public/
     └── mari-anboto.jpg        # Ilustración del hero
 ```
@@ -275,12 +306,31 @@ Formato: `<Palabra>-<NN>` donde NN es número entre 10 y 999.
 
 ---
 
-## Próximos pasos
+## Estado de las funcionalidades
 
-- Construir las 6 herramientas reales (Sugaarren borroka primero).
-- Permitir crear ikasgelak desde el panel.
-- Sistema de tokens para alumnos (sin email, solo código).
-- Páginas internas (`/nor-gara`, `/pribatutasun-politika`, etc.).
+Comprobado contra las rutas de `app/` y los scripts de `supabase/`.
+
+### Hecho
+
+- **Profesores**: registro, login y recuperación de contraseña (email + contraseña).
+- **Ikasgelak**: crear (`/panela/ikasgela-berria`) y configurar nombre, maná y corazones por reparto, y días de reparto (`konfiguratu`).
+- **Alumnos**: alta por lista, usuario + contraseña generados, login en `/ikasle/sartu`, panel propio con avatar editable, XP, corazones, maná y nivel.
+- **6 herramientas de aula**: Sugaarren borroka (`borroka`), Mariren isiltasuna (`isiltasuna`), ustekabeko gertaera (`ustekabekoa`), atzerako kontaketa (`kontaketa`), kronometroa (`kronometroa`), ausazko hautatzailea (`hautatzailea`).
+- **Jokabideak**: conductas positivas/negativas por aula con XP/corazones (`jokabideak`, `konfiguratu/sariak`, `konfiguratu/zigorrak`).
+- **Taldeak**: generación automática y edición (`taldeak`, `konfiguratu/taldeak`).
+- **Botereak**: catálogo de poderes, uso por el alumno con coste de maná, cola de solicitudes para el profesor (`eskaerak`) y edición completa por aula (`konfiguratu/botereak`).
+- **Patuak**: al llegar a 0 corazones, el profesor ejecuta una consecuencia aleatoria de una lista editable (`konfiguratu/patuak`).
+- **Misioak**: mapa de nodos con conexiones, envío de respuestas por el alumno, validación del profesor, progreso del aula y recompensa final.
+- **Proyección**: vista del aula para pantalla (`/proiektatu/[classroomId]`).
+- **Página de privacidad**: `/pribatutasun-politika`.
+
+### Pendiente
+
+- Enlaces del footer sin destino (`href="#"`): "Nor gara?", "Pribatutasun politika" (la página existe pero no está enlazada) y "Erabilera baldintzak" (no existe página).
+- Tarjetas de herramientas de la landing (`components/ToolsSection.tsx`) sin enlace (`href="#"`).
+- Música de fondo en la batalla (TODO en `components/battle/sounds.ts`).
+- GRANT de las tablas en los scripts SQL (ver nota en el paso 3).
+- Licencia.
 
 ---
 
