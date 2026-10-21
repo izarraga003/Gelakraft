@@ -27,39 +27,31 @@
 --   los permisos del propietario de la función, no con los de anon.
 -- ============================================================
 
--- schema.sql
-grant select, insert, update, delete on public.profiles to authenticated, service_role;
-grant select, insert, update, delete on public.classrooms to authenticated, service_role;
-
--- students.sql
-grant select, insert, update, delete on public.students to authenticated, service_role;
-
--- student-dashboard.sql
-grant select, insert, update, delete on public.activities to authenticated, service_role;
-
--- behaviors-teams-powers.sql
-grant select, insert, update, delete on public.behaviors to authenticated, service_role;
-grant select, insert, update, delete on public.teams to authenticated, service_role;
-grant select, insert, update, delete on public.team_members to authenticated, service_role;
-grant select, insert, update, delete on public.power_usages to authenticated, service_role;
-
--- konfigurazioa.sql
-grant select, insert, update, delete on public.power_overrides to authenticated, service_role;
-
--- power-requests.sql
-grant select, insert, update, delete on public.power_requests to authenticated, service_role;
-
--- patuak.sql
-grant select, insert, update, delete on public.death_consequences to authenticated, service_role;
-
--- events.sql
-grant select, insert, update, delete on public.events to authenticated, service_role;
-
--- missions.sql
-grant select, insert, update, delete on public.missions to authenticated, service_role;
-grant select, insert, update, delete on public.mission_nodes to authenticated, service_role;
-grant select, insert, update, delete on public.mission_edges to authenticated, service_role;
-grant select, insert, update, delete on public.mission_progress to authenticated, service_role;
-
--- missions-patch-v3.sql
-grant select, insert, update, delete on public.mission_completions to authenticated, service_role;
+-- Si una tabla no existe (por ejemplo, porque no se ha ejecutado su script),
+-- se salta con un aviso en lugar de abortar todo el script.
+do $$
+declare
+  t text;
+begin
+  foreach t in array array[
+    'profiles', 'classrooms',                                       -- schema.sql
+    'students',                                                     -- students.sql
+    'activities',                                                   -- student-dashboard.sql
+    'behaviors', 'teams', 'team_members', 'power_usages',           -- behaviors-teams-powers.sql
+    'power_overrides',                                              -- konfigurazioa.sql
+    'power_requests',                                               -- power-requests.sql
+    'death_consequences',                                           -- patuak.sql
+    'events',                                                       -- events.sql
+    'missions', 'mission_nodes', 'mission_edges', 'mission_progress', -- missions.sql
+    'mission_completions'                                           -- missions-patch-v3.sql
+  ]
+  loop
+    if to_regclass('public.' || t) is null then
+      raise notice 'Tabla public.% no existe, se salta', t;
+    else
+      execute format(
+        'grant select, insert, update, delete on public.%I to authenticated, service_role', t
+      );
+    end if;
+  end loop;
+end $$;
