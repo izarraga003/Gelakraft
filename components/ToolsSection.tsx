@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import SectionHeader from './SectionHeader'
 import {
   FlameIcon,
@@ -61,7 +62,7 @@ const tools: Tool[] = [
 
 function ToolCard({ numeral, name, desc, icon }: Tool) {
   return (
-    <a href="#" className="tool-card">
+    <Link href="/izen-ematea" className="tool-card">
       <div className="tool-card-header">
         <div className="tool-icon">{icon}</div>
         <div className="tool-num">{numeral}</div>
@@ -71,7 +72,7 @@ function ToolCard({ numeral, name, desc, icon }: Tool) {
       <span className="tool-link">
         Probatu <span className="tool-link-arrow">→</span>
       </span>
-    </a>
+    </Link>
   )
 }
 
