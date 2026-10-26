@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import SectionHeader from './SectionHeader'
 import { KeyIcon, EnvelopeIcon, DocumentCheckIcon } from './icons'
 
@@ -54,7 +55,7 @@ export default function PrivacySection() {
 
         <div className="privacy-footer">
           <p>
-            Xehetasun guztiak <a href="#">pribatutasun politika osoan</a>.
+            Xehetasun guztiak <Link href="/pribatutasun-politika">pribatutasun politika osoan</Link>.
           </p>
         </div>
       </div>

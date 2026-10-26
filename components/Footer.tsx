@@ -62,16 +62,10 @@ export default function Footer() {
           <h4 className="footer-col-title">Proiektua</h4>
           <ul>
             <li>
-              <a href="#">Nor gara?</a>
-            </li>
-            <li>
               <a href="mailto:info@gelakraft.eus">Kontaktua</a>
             </li>
             <li>
-              <a href="#">Pribatutasun politika</a>
-            </li>
-            <li>
-              <a href="#">Erabilera baldintzak</a>
+              <Link href="/pribatutasun-politika">Pribatutasun politika</Link>
             </li>
           </ul>
         </div>

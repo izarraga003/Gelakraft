@@ -37,7 +37,7 @@ npm install
 
 ### 3. Ejecutar el esquema de base de datos
 
-En Supabase: **SQL Editor** → **New query** → pegar el script → **Run**. Repetir con cada uno de los 18 scripts de `supabase/`, **en este orden**:
+En Supabase: **SQL Editor** → **New query** → pegar el script → **Run**. Repetir con cada uno de los 19 scripts de `supabase/`, **en este orden**:
 
 | # | Script | Qué hace | Depende de |
 |---|--------|----------|------------|
@@ -59,6 +59,7 @@ En Supabase: **SQL Editor** → **New query** → pegar el script → **Run**. R
 | 16 | `missions-patch-v2.sql` | Redefine `ensure_start_node` | 15 |
 | 17 | `missions-patch-v3.sql` | Tabla `mission_completions`; redefine `submit_mission_node`, `review_mission_node` | 16 |
 | 18 | `missions-patch-v5.sql` | `mission_progress.mission_id` NOT NULL + trigger; redefine `check_mission_completion`, `get_mission_classroom_progress` | 17 |
+| 19 | `grants.sql` | GRANT de las 17 tablas a `authenticated` y `service_role`; salta las que no existen | 1–18 |
 
 No hay `missions-patch-v4.sql`: los commits "misioak v4" solo tocaron código de la app.
 
@@ -71,7 +72,7 @@ El orden es el de creación de cada script en el historial de git, comprobado co
 
 Todos los scripts usan `if not exists` / `create or replace`, así que volver a ejecutar uno ya aplicado no falla; lo que importa es el orden relativo de los que redefinen funciones.
 
-> **GRANT pendientes.** Ningún script incluye `grant ... to authenticated / service_role / anon`. Las tablas ya creadas conservan su acceso, pero desde el 30/10/2026 Supabase no da acceso por la Data API a las tablas nuevas. Si se monta una base de datos nueva con estos scripts después de esa fecha, habrá que añadir los GRANT de las 17 tablas: `profiles`, `classrooms`, `students`, `events`, `activities`, `behaviors`, `teams`, `team_members`, `power_usages`, `power_requests`, `power_overrides`, `death_consequences`, `missions`, `mission_nodes`, `mission_edges`, `mission_progress`, `mission_completions`. Ver `CLAUDE.md`.
+> **GRANT.** Desde el 30/10/2026 Supabase no da acceso por la Data API a las tablas nuevas de `public`. `grants.sql` (paso 19) da los permisos de las 17 tablas; ejecútalo al final. Las tablas que se creen a partir de ahora deben llevar sus propios GRANT en su script (ver `CLAUDE.md`).
 
 ### 4. Configurar Authentication en Supabase
 
@@ -236,7 +237,7 @@ gelakraft/
 │       └── middleware.ts      # Helper para refrescar sesión
 ├── middleware.ts              # Protege /panela, refresca sesión
 ├── supabase/
-│   └── *.sql                  # 18 scripts de BD (orden en "Setup inicial", paso 3)
+│   └── *.sql                  # 19 scripts de BD (orden en "Setup inicial", paso 3)
 └── public/
     └── mari-anboto.jpg        # Ilustración del hero
 ```
@@ -326,10 +327,8 @@ Comprobado contra las rutas de `app/` y los scripts de `supabase/`.
 
 ### Pendiente
 
-- Enlaces del footer sin destino (`href="#"`): "Nor gara?", "Pribatutasun politika" (la página existe pero no está enlazada) y "Erabilera baldintzak" (no existe página).
-- Tarjetas de herramientas de la landing (`components/ToolsSection.tsx`) sin enlace (`href="#"`).
+- Páginas "Nor gara?" y "Erabilera baldintzak": no existen (se quitaron del footer hasta tenerlas).
 - Música de fondo en la batalla (TODO en `components/battle/sounds.ts`).
-- GRANT de las tablas en los scripts SQL (ver nota en el paso 3).
 - Licencia.
 
 ---
